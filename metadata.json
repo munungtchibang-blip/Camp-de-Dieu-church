@@ -1,0 +1,6 @@
+{
+  "name": "CAMP DE DIEU",
+  "description": "Portail moderne pour l'église CAMP DE DIEU à Kinshasa. Services religieux, streaming en direct, prédications, demandes de prière et dons en ligne.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"],
+  "majorCapabilities": ["firebase", "ai"]
+}

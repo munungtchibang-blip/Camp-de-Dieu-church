@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isModerator() {
+      return isSignedIn() && (
+        request.auth.token.email == 'mushitujacques3@gmail.com' && 
+        request.auth.token.email_verified == true
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 1. Users
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isModerator();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isModerator();
+    }
+
+    // 2. Announcements
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 3. Sermons
+    match /sermons/{sermonId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 4. Events
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 5. Prayer Requests
+    match /prayer_requests/{requestId} {
+      allow create: if isSignedIn();
+      allow get, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isModerator());
+      allow update, delete: if isModerator();
+    }
+
+    // 6. Appointments
+    match /appointments/{appointmentId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isModerator());
+      allow list: if isModerator() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isModerator();
+    }
+
+    // 7. Donations
+    match /donations/{donationId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isModerator());
+      allow list: if isModerator();
+    }
+
+    // 8. Site Config
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 9. Team
+    match /team/{memberId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 10. Contacts (Messages)
+    match /contacts/{contactId} {
+      allow create: if true;
+      allow read, write: if isModerator();
+    }
+
+    // 11. Gallery
+    match /gallery/{mediaId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 12. Pastor Off Days
+    match /pastor_off_days/{dayId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 13. Ministries
+    match /ministries/{ministryId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information for church members.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["member", "admin", "moderator"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Latest church news and alerts.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isUrgent": { "type": "boolean" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "Sermon": {
+      "title": "Sermon",
+      "description": "Recorded sermons (Video, Audio, PDF).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "preacher": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "category": { "type": "string", "enum": ["Foi", "Famille", "Délivrance", "Jeunesse"] },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "aiSummary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "preacher", "date", "category"]
+    },
+    "Event": {
+      "title": "Church Event",
+      "description": "Scheduled cults, conferences, and seminars.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "type": { "type": "string", "enum": ["Culte", "Conférence", "Séminaire", "Croisade", "Jeunesse"] }
+      },
+      "required": ["title", "start", "type"]
+    },
+    "PrayerRequest": {
+      "title": "Prayer Request",
+      "description": "Requests from faithful members.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "phone": { "type": "string" },
+        "isConfidential": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "prayed", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "message", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Booked meetings with pastors.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "reason": { "type": "string", "enum": ["Conseil spirituel", "Prière", "Mariage", "Accompagnement"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "date", "time", "reason", "status"]
+    },
+    "Donation": {
+      "title": "Donation",
+      "description": "Financial contributions.",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "method": { "type": "string", "enum": ["Orange Money", "Airtel Money", "M-Pesa", "Card"] },
+        "campaignId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "method", "status", "createdAt"]
+    },
+    "TeamMember": {
+      "title": "Team Member",
+      "description": "Pastors, Evangelists and church leadership.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "role", "createdAt"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "Messages sent via the contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "subject", "message", "createdAt"]
+    },
+    "Ministry": {
+      "title": "Church Ministry",
+      "description": "Information about different church departments.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "leader": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "iconName": { "type": "string" },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "time": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "description", "createdAt"]
+    },
+    "SiteConfig": {
+      "title": "Site Configuration",
+      "description": "Global settings for the website.",
+      "type": "object",
+      "properties": {
+        "identity": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "address": { "type": "string" },
+            "phone": { "type": "string" },
+            "email": { "type": "string" },
+            "whatsapp": { "type": "string" },
+            "aboutText": { "type": "string" },
+            "missionText": { "type": "string" }
+          }
+        },
+        "hero": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" },
+            "imageUrl": { "type": "string" }
+          }
+        },
+        "socials": {
+          "type": "object",
+          "properties": {
+            "facebook": { "type": "string" },
+            "youtube": { "type": "string" },
+            "instagram": { "type": "string" },
+            "twitter": { "type": "string" },
+            "liveUrl": { "type": "string" }
+          }
+        },
+        "mobileMoney": {
+          "type": "object",
+          "properties": {
+            "orangeMoney": { "type": "string" },
+            "airtelMoney": { "type": "string" },
+            "mpesa": { "type": "string" }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Church announcements."
+    },
+    "/sermons/{sermonId}": {
+      "schema": "Sermon",
+      "description": "Church sermons library."
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Calendar events."
+    },
+    "/prayer_requests/{requestId}": {
+      "schema": "PrayerRequest",
+      "description": "Faithful prayer requests."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Pastor appointments."
+    },
+    "/donations/{donationId}": {
+      "schema": "Donation",
+      "description": "Donation records."
+    },
+    "/team/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Church team members."
+    },
+    "/contacts/{contactId}": {
+      "schema": "ContactMessage",
+      "description": "Messages from contact form."
+    },
+    "/ministries/{ministryId}": {
+      "schema": "Ministry",
+      "description": "Church ministries information."
+    },
+    "/config/{configId}": {
+      "schema": "SiteConfig",
+      "description": "Global site settings."
+    }
+  }
+}
