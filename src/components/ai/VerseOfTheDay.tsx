@@ -3,13 +3,34 @@ import { useEffect, useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Book, RefreshCw } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Lazy initialization of GoogleGenAI to prevent crash if API key is missing
+let aiInstance: any = null;
+const getAI = () => {
+  if (!aiInstance && process.env.GEMINI_API_KEY) {
+    try {
+      aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } catch (e) {
+      console.error("Failed to initialize Gemini AI:", e);
+    }
+  }
+  return aiInstance;
+};
 
 export default function VerseOfTheDay() {
   const [verse, setVerse] = useState<{ text: string, reference: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchVerse = async () => {
+    const ai = getAI();
+    if (!ai) {
+      setVerse({
+        text: "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.",
+        reference: "Jérémie 29:11"
+      });
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await ai.models.generateContent({

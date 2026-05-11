@@ -4,7 +4,18 @@ import { MessageSquare, X, Send, Book, Sparkles } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { cn } from '../../lib/utils';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Lazy initialization of GoogleGenAI to prevent crash if API key is missing
+let aiInstance: any = null;
+const getAI = () => {
+  if (!aiInstance && process.env.GEMINI_API_KEY) {
+    try {
+      aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    } catch (e) {
+      console.error("Failed to initialize Gemini AI:", e);
+    }
+  }
+  return aiInstance;
+};
 
 export default function BibleAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +39,13 @@ export default function BibleAssistant() {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setLoading(true);
+
+    const ai = getAI();
+    if (!ai) {
+      setMessages(prev => [...prev, { role: 'ai', text: 'Je suis désolé, le service AI n\'est pas configuré. Veuillez contacter l\'administrateur.' }]);
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await ai.models.generateContent({
