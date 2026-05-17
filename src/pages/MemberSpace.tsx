@@ -28,8 +28,12 @@ export default function MemberSpace() {
         setLoginError("Le popup a été bloqué par votre navigateur. Veuillez autoriser les popups pour ce site.");
       } else if (error.code === 'auth/cancelled-popup-request') {
         // Just reset, user likely closed the window
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setLoginError("Ce domaine n'est pas autorisé dans la console Firebase. Veuillez ajouter votre URL Netlify aux 'Domaines autorisés' dans Authentication > Paramètres.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setLoginError("La connexion Google n'est pas activée dans votre console Firebase.");
       } else {
-        setLoginError("Une erreur est survenue lors de la connexion. Veuillez réessayer.");
+        setLoginError(`Erreur: ${error.message || "Une erreur est survenue lors de la connexion. Veuillez réessayer."}`);
       }
     } finally {
       setIsLoggingIn(false);
@@ -135,8 +139,21 @@ export default function MemberSpace() {
             {!user ? (
               <>
                 {loginError && (
-                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold text-center">
-                    {loginError}
+                  <div className="space-y-4">
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold leading-relaxed">
+                      <p className="mb-2 uppercase tracking-tight">Erreur de Connexion</p>
+                      {loginError}
+                    </div>
+                    {loginError.includes('domaine n\'est pas autorisé') && (
+                      <div className="p-4 bg-slate-50 border border-church-border rounded-xl text-[10px] text-slate-500 font-bold">
+                        <p className="text-church-blue uppercase mb-2">Solution pour l'administrateur :</p>
+                        <ol className="list-decimal list-inside space-y-1">
+                          <li>Allez sur <a href="https://console.firebase.google.com" target="_blank" className="underline">console.firebase.google.com</a></li>
+                          <li>Allez dans Authentification &gt; Paramètres &gt; Domaines autorisés</li>
+                          <li>Ajoutez votre domaine Netlify (ex: mon-site.netlify.app)</li>
+                        </ol>
+                      </div>
+                    )}
                   </div>
                 )}
                 <button 

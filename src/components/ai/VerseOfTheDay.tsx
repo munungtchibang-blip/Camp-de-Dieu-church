@@ -1,46 +1,22 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { Book, RefreshCw } from 'lucide-react';
-
-// Lazy initialization of GoogleGenAI to prevent crash if API key is missing
-let aiInstance: any = null;
-const getAI = () => {
-  if (!aiInstance && process.env.GEMINI_API_KEY) {
-    try {
-      aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    } catch (e) {
-      console.error("Failed to initialize Gemini AI:", e);
-    }
-  }
-  return aiInstance;
-};
+import { generateAIContent } from '../../services/aiService';
 
 export default function VerseOfTheDay() {
   const [verse, setVerse] = useState<{ text: string, reference: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchVerse = async () => {
-    const ai = getAI();
-    if (!ai) {
-      setVerse({
-        text: "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.",
-        reference: "Jérémie 29:11"
-      });
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: "Génère un verset biblique inspirant pour aujourd'hui (en français). Réponds au format JSON: { \"text\": \"verset\", \"reference\": \"référence\" }",
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
-      const data = JSON.parse(response.text || '{}');
+      const response = await generateAIContent(
+        "Génère un verset biblique inspirant pour aujourd'hui (en français). Réponds AU FORMAT JSON STRICT: { \"text\": \"verset\", \"reference\": \"référence\" }. N'ajoute aucun texte avant ou après le JSON.",
+        "Tu es un assistant biblique spirituel."
+      );
+      
+      const cleanJson = response.replace(/```json\n?|\n?```/g, '').trim();
+      const data = JSON.parse(cleanJson);
       setVerse(data);
     } catch (error) {
       console.error("Error fetching AI verse:", error);

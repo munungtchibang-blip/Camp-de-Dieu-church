@@ -120,9 +120,30 @@ export default function Live() {
                       Nous ne sommes pas en direct pour le moment. Consultez le programme ci-dessous pour ne pas manquer nos prochains rendez-vous.
                     </p>
                   </div>
-                  <button className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                    S'abonner sur YouTube
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    {config?.socials.youtube && (
+                      <a 
+                        href={config.socials.youtube}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-xl shadow-red-600/20"
+                      >
+                        <Youtube size={16} />
+                        S'abonner sur YouTube
+                      </a>
+                    )}
+                    {config?.socials.facebook && (
+                      <a 
+                        href={config.socials.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-xl shadow-blue-600/20"
+                      >
+                        <Video size={16} />
+                        Suivre sur Facebook
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
               

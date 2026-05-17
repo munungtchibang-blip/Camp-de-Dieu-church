@@ -96,10 +96,14 @@ export default function Navbar() {
                 key={link.name}
                 to={link.href}
                 className={cn(
-                  "group relative px-3 py-2 rounded-xl transition-all duration-300",
+                  "group relative px-4 py-2 rounded-xl transition-all duration-300",
                   location.pathname === link.href 
-                    ? scrolled || location.pathname !== '/' ? "bg-church-blue/5" : "bg-white/10"
-                    : "hover:bg-church-blue/5"
+                    ? scrolled || location.pathname !== '/' 
+                      ? "bg-church-blue text-white shadow-lg shadow-church-blue/20" 
+                      : "bg-white text-church-blue shadow-lg shadow-black/10"
+                    : scrolled || location.pathname !== '/'
+                      ? "hover:bg-church-blue/5 text-slate-600 hover:text-church-blue"
+                      : "hover:bg-white/10 text-white/90 hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -108,15 +112,15 @@ export default function Navbar() {
                     className={cn(
                       "transition-all duration-300 group-hover:scale-110",
                       location.pathname === link.href 
-                        ? "text-church-blue" 
+                        ? scrolled || location.pathname !== '/' ? "text-white" : "text-church-blue"
                         : scrolled || location.pathname !== '/' ? "text-slate-400 group-hover:text-church-blue" : "text-white/60 group-hover:text-church-gold"
                     )} 
                   />
                   <span className={cn(
                     "text-[10px] font-black uppercase tracking-widest transition-colors",
                     location.pathname === link.href 
-                      ? "text-church-dark" 
-                      : scrolled || location.pathname !== '/' ? "text-slate-600 group-hover:text-church-dark" : "text-white/90 group-hover:text-white"
+                      ? scrolled || location.pathname !== '/' ? "text-white" : "text-church-blue"
+                      : "inherit"
                   )}>
                     {link.name}
                   </span>
@@ -134,10 +138,10 @@ export default function Navbar() {
               <Link
                 to="/admin"
                 className={cn(
-                  "text-xs font-black transition-colors uppercase tracking-widest flex items-center gap-2",
+                  "px-4 py-2 rounded-xl text-xs font-black transition-all uppercase tracking-widest flex items-center gap-2",
                   location.pathname.startsWith('/admin')
-                    ? "text-church-accent"
-                    : scrolled || location.pathname !== '/' ? "text-slate-600 hover:text-church-accent" : "text-white/90 hover:text-church-accent"
+                    ? scrolled || location.pathname !== '/' ? "bg-church-accent text-church-dark shadow-lg shadow-church-accent/20" : "bg-white text-church-accent shadow-lg shadow-black/10"
+                    : scrolled || location.pathname !== '/' ? "text-slate-600 hover:text-church-accent hover:bg-church-accent/5" : "text-white/90 hover:text-church-accent hover:bg-white/10"
                 )}
               >
                 <LayoutDashboard size={14} />

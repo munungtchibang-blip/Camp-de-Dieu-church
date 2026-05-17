@@ -1,21 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Book, Sparkles } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { cn } from '../../lib/utils';
-
-// Lazy initialization of GoogleGenAI to prevent crash if API key is missing
-let aiInstance: any = null;
-const getAI = () => {
-  if (!aiInstance && process.env.GEMINI_API_KEY) {
-    try {
-      aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    } catch (e) {
-      console.error("Failed to initialize Gemini AI:", e);
-    }
-  }
-  return aiInstance;
-};
+import { generateAIContent } from '../../services/aiService';
 
 export default function BibleAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,23 +27,13 @@ export default function BibleAssistant() {
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setLoading(true);
 
-    const ai = getAI();
-    if (!ai) {
-      setMessages(prev => [...prev, { role: 'ai', text: 'Je suis désolé, le service AI n\'est pas configuré. Veuillez contacter l\'administrateur.' }]);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: userMsg,
-        config: {
-          systemInstruction: "Tu es un assistant biblique sage et bienveillant pour l'église CAMP DE DIEU à Kinshasa. Réponds aux questions spirituelles en te basant sur la Bible, avec un ton encourageant et respectueux. Ta réponse doit être en français."
-        }
-      });
+      const response = await generateAIContent(
+        userMsg,
+        "Tu es un assistant biblique sage et bienveillant pour l'église CAMP DE DIEU à Kinshasa. Réponds aux questions spirituelles en te basant sur la Bible, avec un ton encourageant et respectueux. Ta réponse doit être en français."
+      );
       
-      setMessages(prev => [...prev, { role: 'ai', text: response.text || 'Je m\'excuse, je n\'ai pas pu traiter votre demande.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: response || 'Je m\'excuse, je n\'ai pas pu traiter votre demande.' }]);
     } catch (error) {
       console.error("AI Error:", error);
       setMessages(prev => [...prev, { role: 'ai', text: 'Désolé, j\'ai une petite difficulté technique. Que la paix du Seigneur soit avec vous.' }]);
