@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Youtube, Video, MessageCircle, Activity, Calendar, Clock, MapPin, Share2, Tv } from 'lucide-react';
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import { format } from 'date-fns';
@@ -115,9 +116,19 @@ export default function Live() {
                     <Video size={80} className="text-church-gold relative z-10" />
                   </div>
                   <div className="max-w-md">
-                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Le Direct reprendra bientôt</h2>
-                    <p className="text-white/40 text-sm leading-relaxed">
-                      Nous ne sommes pas en direct pour le moment. Consultez le programme ci-dessous pour ne pas manquer nos prochains rendez-vous.
+                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">
+                      {config?.socials.nextLiveTitle || "Le Direct reprendra bientôt"}
+                    </h2>
+                    {config?.socials.nextLiveDate && (
+                      <div className="flex flex-col items-center gap-1 mb-6">
+                        <span className="text-[10px] font-black text-church-gold uppercase tracking-[0.3em]">Prochain rendez-vous</span>
+                        <p className="text-white text-lg font-black uppercase tracking-tight">
+                          {format(new Date(config.socials.nextLiveDate), "eeee d MMMM 'à' HH:mm", { locale: fr })}
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-white/40 text-sm leading-relaxed mb-8">
+                      Nous ne sommes pas en direct pour le moment. Rejoignez nos plateformes officielles pour recevoir une notification dès le début.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -269,9 +280,11 @@ export default function Live() {
               <p className="text-xs text-white/50 leading-relaxed mb-6 font-medium">
                 Si vous avez été touché par le message en cours, nos pasteurs sont disponibles pour prier avec vous.
               </p>
-              <button className="w-full py-4 bg-church-blue text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-church-blue/20 hover:scale-105 transition-all">
-                Demander un soutien
-              </button>
+              <Link to="/priere" className="w-full">
+                <button className="w-full py-4 bg-church-blue text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-church-blue/20 hover:scale-105 transition-all">
+                  Demander un soutien
+                </button>
+              </Link>
             </div>
           </div>
         </div>

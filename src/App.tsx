@@ -13,6 +13,7 @@ import Programs from './pages/Programs';
 import Live from './pages/Live';
 import Sermons from './pages/Sermons';
 import PrayerRequest from './pages/PrayerRequest';
+import Announcements from './pages/Announcements';
 import Ministries from './pages/Ministries';
 import Appointments from './pages/Appointments';
 import MemberSpace from './pages/MemberSpace';
@@ -36,6 +37,7 @@ function AnimatedRoutes() {
         <Route path="/direct" element={<Live />} />
         <Route path="/predications" element={<Sermons />} />
         <Route path="/priere" element={<PrayerRequest />} />
+        <Route path="/annonces" element={<Announcements />} />
         <Route path="/ministeres" element={<Ministries />} />
         <Route path="/rendez-vous" element={<Appointments />} />
         <Route path="/membre/*" element={<MemberSpace />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Loader2, Globe, Phone, Mail, Instagram, Facebook, Youtube, Twitter, MapPin, Type, Image as ImageIcon, Plus, Trash } from 'lucide-react';
+import { Save, Loader2, Globe, Phone, Mail, Instagram, Facebook, Youtube, Twitter, MapPin, Type, Image as ImageIcon, Plus, Trash, Tv } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 import { SiteConfig } from '../../hooks/useSiteConfig';
@@ -22,7 +22,7 @@ export default function SiteSettings() {
       imageUrl: '',
       imageUrls: [] as string[]
     },
-    socials: { facebook: '', youtube: '', instagram: '', twitter: '', liveUrl: '' },
+    socials: { facebook: '', youtube: '', instagram: '', twitter: '', liveUrl: '', nextLiveTitle: '', nextLiveDate: '' },
     mobileMoney: { orangeMoney: '', airtelMoney: '', mpesa: '' }
   });
 
@@ -330,33 +330,69 @@ export default function SiteSettings() {
           Digital & Réseaux Sociaux
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook</label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook</label>
+              <span className="text-[8px] font-bold text-slate-300">URL complète requise</span>
+            </div>
             <input 
               type="text"
               value={config.socials.facebook}
               onChange={e => setConfig({...config, socials: {...config.socials, facebook: e.target.value}})}
               className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+              placeholder="https://facebook.com/votrepage"
             />
           </div>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube</label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube</label>
+              <span className="text-[8px] font-bold text-slate-300">URL complète requise</span>
+            </div>
             <input 
               type="text"
               value={config.socials.youtube}
               onChange={e => setConfig({...config, socials: {...config.socials, youtube: e.target.value}})}
               className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+              placeholder="https://youtube.com/@votrechaine"
             />
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">URL Embed YouTube Direct</label>
-            <input 
-              type="text"
-              value={config.socials.liveUrl}
-              onChange={e => setConfig({...config, socials: {...config.socials, liveUrl: e.target.value}})}
-              className="w-full bg-rose-50 border border-rose-100 rounded-xl px-4 py-3 text-sm"
-              placeholder="Ex: https://www.youtube.com/embed/..."
-            />
+          <div className="md:col-span-2 pt-6 border-t border-slate-50">
+            <h3 className="text-xs font-black text-rose-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Tv size={14} />
+              Programmer le Prochain Direct
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Titre du Direct</label>
+                <input 
+                  type="text"
+                  value={config.socials.nextLiveTitle || ''}
+                  onChange={e => setConfig({...config, socials: {...config.socials, nextLiveTitle: e.target.value}})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm font-bold"
+                  placeholder="Ex: Culte de Célébration & Action de Grâce"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Date & Heure du Direct</label>
+                <input 
+                  type="datetime-local"
+                  value={config.socials.nextLiveDate || ''}
+                  onChange={e => setConfig({...config, socials: {...config.socials, nextLiveDate: e.target.value}})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">URL Embed YouTube Direct (Streaming Actif)</label>
+                <input 
+                  type="text"
+                  value={config.socials.liveUrl}
+                  onChange={e => setConfig({...config, socials: {...config.socials, liveUrl: e.target.value}})}
+                  className="w-full bg-rose-50 border border-rose-100 rounded-xl px-4 py-3 text-sm"
+                  placeholder="Ex: https://www.youtube.com/embed/LIVE_ID"
+                />
+                <p className="mt-2 text-[10px] text-slate-400 font-medium">Laissez vide si vous n'êtes pas en direct. Le titre et la date seront affichés à la place.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

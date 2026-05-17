@@ -34,9 +34,10 @@ export default function BibleAssistant() {
       );
       
       setMessages(prev => [...prev, { role: 'ai', text: response || 'Je m\'excuse, je n\'ai pas pu traiter votre demande.' }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'ai', text: 'Désolé, j\'ai une petite difficulté technique. Que la paix du Seigneur soit avec vous.' }]);
+      const errorMsg = error.message || 'Désolé, j\'ai une petite difficulté technique.';
+      setMessages(prev => [...prev, { role: 'ai', text: `${errorMsg} Que la paix du Seigneur soit avec vous.` }]);
     } finally {
       setLoading(false);
     }

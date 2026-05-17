@@ -8,6 +8,20 @@ export default function VerseOfTheDay() {
   const [loading, setLoading] = useState(true);
 
   const fetchVerse = async () => {
+    // Check cache first (valid for 24 hours)
+    const cachedVerse = localStorage.getItem('verse_of_the_day');
+    const cacheTimestamp = localStorage.getItem('verse_timestamp');
+    const now = new Date().getTime();
+
+    if (cachedVerse && cacheTimestamp) {
+      const dayInMs = 24 * 60 * 60 * 1000;
+      if (now - parseInt(cacheTimestamp) < dayInMs) {
+        setVerse(JSON.parse(cachedVerse));
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const response = await generateAIContent(
@@ -17,13 +31,24 @@ export default function VerseOfTheDay() {
       
       const cleanJson = response.replace(/```json\n?|\n?```/g, '').trim();
       const data = JSON.parse(cleanJson);
+      
+      // Save to cache
+      localStorage.setItem('verse_of_the_day', JSON.stringify(data));
+      localStorage.setItem('verse_timestamp', now.toString());
+      
       setVerse(data);
     } catch (error) {
       console.error("Error fetching AI verse:", error);
-      setVerse({
-        text: "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.",
-        reference: "Jérémie 29:11"
-      });
+      
+      const fallbacks = [
+        { text: "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.", reference: "Jérémie 29:11" },
+        { text: "L'Éternel est mon berger: je ne manquerai de rien.", reference: "Psaume 23:1" },
+        { text: "Je puis tout par celui qui me fortifie.", reference: "Philippiens 4:13" },
+        { text: "Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras.", reference: "Josué 1:9" }
+      ];
+      
+      const randomFallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      setVerse(randomFallback);
     } finally {
       setLoading(false);
     }

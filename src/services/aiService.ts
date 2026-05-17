@@ -16,7 +16,10 @@ export async function generateAIContent(prompt: string, systemInstruction?: stri
     const data = await response.json();
     return data.text;
   } catch (error) {
-    console.error('AI Service Error:', error);
+    console.error('AI Service Error details:', error);
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.error('Network error - check if server is running and accessible at /api/ai/generate');
+    }
     throw error;
   }
 }

@@ -31,6 +31,8 @@ export interface SiteConfig {
     instagram: string;
     twitter: string;
     liveUrl: string;
+    nextLiveTitle?: string;
+    nextLiveDate?: string;
   };
   mobileMoney: {
     orangeMoney: string;
@@ -76,6 +78,8 @@ export function useSiteConfig() {
             instagram: data.socials?.instagram || '',
             twitter: data.socials?.twitter || '',
             liveUrl: data.socials?.liveUrl || '',
+            nextLiveTitle: data.socials?.nextLiveTitle || '',
+            nextLiveDate: data.socials?.nextLiveDate || '',
           },
           mobileMoney: {
             orangeMoney: data.mobileMoney?.orangeMoney || '',
