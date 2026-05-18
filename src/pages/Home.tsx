@@ -100,184 +100,236 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="flex-1 flex flex-col lg:flex-row">
-        {/* Left: Hero & News Section */}
-        <div className="w-full lg:w-2/3 flex flex-col">
-          <div className="relative min-h-[500px] flex items-center px-6 md:px-20 group overflow-hidden" aria-label={randomImage.description}>
-            <motion.div 
-              key={randomImage.url || 'default'}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url('${randomImage.url || hero.imageUrl}')` }}
-              role="img"
-              aria-label={randomImage.description}
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-church-dark/95 via-church-dark/50 to-transparent"></div>
-            
-            <div className="relative z-10 max-w-xl py-20">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <div className="bg-church-gold h-1.5 w-24 mb-6"></div>
-                <h2 className="text-4xl md:text-6xl font-display font-black text-white leading-[1.1] mb-6">
-                  {hero.title.split('\n').map((line, i) => (
-                    <span key={i}>{line}<br/></span>
-                  ))}
-                </h2>
-                <p className="text-lg md:text-xl text-blue-50/80 mb-10 font-light leading-relaxed">
-                  {hero.subtitle}
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link 
-                    to="/direct"
-                    className="px-8 py-4 bg-church-accent text-church-dark font-black rounded shadow-2xl hover:bg-church-gold transition-all uppercase text-xs tracking-widest"
-                  >
-                    Suivre le culte en direct
-                  </Link>
-                  <Link 
-                    to="/programmes"
-                    className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-black rounded hover:bg-white/20 transition-all uppercase text-xs tracking-widest"
-                  >
-                    Voir le Programme
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* News Feed Section */}
-          <div className="p-8 md:p-20 bg-white border-b border-church-border">
-            <div className="max-w-4xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-black text-church-dark uppercase tracking-tight flex items-center gap-2">
-                  <Megaphone className="text-church-blue" size={20} />
-                  Annonces Récentes
-                </h3>
-                <Link to="/annonces" className="text-[10px] font-black text-church-blue uppercase tracking-widest hover:underline">Voir tout →</Link>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <div className="relative min-h-[600px] flex items-center group overflow-hidden" aria-label={randomImage.description}>
+          <motion.div 
+            key={randomImage.url || 'default'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url('${randomImage.url || hero.imageUrl}')` }}
+            role="img"
+            aria-label={randomImage.description}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-church-dark/95 via-church-dark/70 to-church-dark/30"></div>
+          
+          <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-20 w-full py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-2xl"
+            >
+              <div className="bg-church-gold h-1.5 w-24 mb-8"></div>
+              <h2 className="text-5xl md:text-7xl font-display font-black text-white leading-[1.05] mb-8 tracking-tighter">
+                {hero.title.split('\n').map((line, i) => (
+                  <span key={i}>{line}<br/></span>
+                ))}
+              </h2>
+              <p className="text-xl md:text-2xl text-blue-50/80 mb-12 font-light leading-relaxed max-w-xl">
+                {hero.subtitle}
+              </p>
+              <div className="flex flex-wrap gap-5">
+                <Link 
+                  to="/direct"
+                  className="px-10 py-5 bg-church-accent text-church-dark font-black rounded-lg shadow-2xl hover:bg-church-gold transition-all uppercase text-xs tracking-[0.2em]"
+                >
+                  Suivre en direct
+                </Link>
+                <Link 
+                  to="/programmes"
+                  className="px-10 py-5 bg-white/10 backdrop-blur-xl border border-white/20 text-white font-black rounded-lg hover:bg-white/20 transition-all uppercase text-xs tracking-[0.2em]"
+                >
+                  Programmes
+                </Link>
               </div>
-              <NewsFeed maxItems={3} />
-            </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* Right Panel: Info & Quick Actions */}
-        <div className="w-full lg:w-1/3 flex flex-col bg-white border-l border-church-border">
-          {/* Worship Schedule Card -> Now NEXT 3 EVENTS */}
-          <div className="p-8 md:p-12 border-b border-church-border bg-slate-50/30">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-church-dark font-black text-lg flex items-center gap-2 uppercase tracking-tight">
-                <Calendar className="w-5 h-5 text-church-blue" />
-                Calendrier
-              </h3>
-              <Link to="/programmes" className="text-[9px] font-black text-church-blue uppercase tracking-widest hover:underline flex items-center gap-1">
-                Voir tout <ChevronRight size={10} />
+        {/* content sections */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-32">
+          
+          {/* Recent Announcements Section */}
+          <section id="annonces-recentes" className="relative">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div>
+                <motion.div 
+                  initial={{ width: 0 }}
+                  whileInView={{ width: 48 }}
+                  className="h-1 bg-church-blue mb-4"
+                />
+                <h3 className="text-3xl font-black text-church-dark uppercase tracking-tighter flex items-center gap-3">
+                  <Megaphone className="text-church-blue" size={32} />
+                  Annonces Récentes
+                </h3>
+              </div>
+              <Link 
+                to="/annonces" 
+                className="group flex items-center gap-2 text-xs font-black text-church-blue uppercase tracking-widest hover:text-church-dark transition-colors"
+              >
+                Voir toutes les annonces
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
+              <NewsFeed maxItems={3} showTitle={false} />
+            </div>
+          </section>
+
+          {/* Mini Calendar Section */}
+          <section id="calendrier-interactif" className="relative">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div>
+                <motion.div 
+                  initial={{ width: 0 }}
+                  whileInView={{ width: 48 }}
+                  className="h-1 bg-church-gold mb-4"
+                />
+                <h3 className="text-3xl font-black text-church-dark uppercase tracking-tighter flex items-center gap-3">
+                  <Calendar className="text-church-gold" size={32} />
+                  Prochains Événements
+                </h3>
+              </div>
+              <Link 
+                to="/programmes" 
+                className="group flex items-center gap-2 text-xs font-black text-church-gold uppercase tracking-widest hover:text-church-dark transition-colors"
+              >
+                Consulter le calendrier complet
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {eventsLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
-                  ))}
-                </div>
+                [1, 2, 3].map(i => (
+                  <div key={i} className="h-64 bg-slate-50 rounded-[40px] animate-pulse border border-slate-100" />
+                ))
               ) : upcomingEvents.length > 0 ? (
                 upcomingEvents.map((event, idx) => (
                   <motion.div
                     key={event.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
+                    viewport={{ once: true }}
                   >
-                    <Link to="/programmes" className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-church-border hover:shadow-md transition-all group">
-                      <div className="w-14 h-14 bg-church-blue rounded-xl flex flex-col items-center justify-center text-center text-white shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                        <span className="text-[8px] font-black uppercase leading-tight">{format(event.start.toDate(), 'MMM', { locale: fr })}</span>
-                        <span className="text-xl font-black leading-none">{format(event.start.toDate(), 'dd')}</span>
+                    <Link 
+                      to="/programmes" 
+                      className="group block h-full bg-white border border-church-border rounded-[40px] p-8 hover:shadow-2xl hover:border-church-gold transition-all relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+                      
+                      <div className="flex items-start justify-between mb-8 relative z-10">
+                        <div className="w-16 h-16 bg-church-gold text-white rounded-2xl flex flex-col items-center justify-center shadow-lg group-hover:rotate-3 transition-transform">
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">
+                            {format(event.start.toDate(), 'MMM', { locale: fr })}
+                          </span>
+                          <span className="text-2xl font-black leading-none">
+                            {format(event.start.toDate(), 'dd')}
+                          </span>
+                        </div>
+                        <span className="px-3 py-1 bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-slate-100">
+                          {event.type}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black text-church-accent uppercase tracking-widest mb-0.5">{event.type}</p>
-                        <h4 className="text-xs font-black text-church-dark uppercase truncate mb-1">{event.title}</h4>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1 text-slate-400">
-                            <Clock size={10} />
-                            <span className="text-[9px] font-bold">{format(event.start.toDate(), 'HH:mm')}</span>
+
+                      <h4 className="text-xl font-black text-church-dark uppercase tracking-tight mb-4 group-hover:text-church-gold transition-colors">
+                        {event.title}
+                      </h4>
+
+                      <div className="space-y-2 relative z-10">
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <Clock size={14} className="text-church-gold" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            À partir de {format(event.start.toDate(), 'HH:mm')}
+                          </span>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <MapPin size={14} className="text-church-gold" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider truncate">
+                              {event.location}
+                            </span>
                           </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1 text-slate-400">
-                              <MapPin size={10} />
-                              <span className="text-[9px] font-bold truncate max-w-[80px]">{event.location}</span>
-                            </div>
-                          )}
+                        )}
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                        <span className="text-[9px] font-black text-church-gold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          En savoir plus
+                        </span>
+                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-church-gold group-hover:text-white transition-all">
+                          <ChevronRight size={16} />
                         </div>
                       </div>
                     </Link>
                   </motion.div>
                 ))
               ) : (
-                <div className="py-12 border-2 border-dashed border-church-border rounded-3xl flex flex-col items-center justify-center text-slate-400">
-                  <Calendar size={32} className="opacity-20 mb-3" />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Aucun évènement prévu</p>
+                <div className="col-span-full py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                  <Calendar size={48} className="opacity-10 mb-6" />
+                  <p className="text-xs font-black uppercase tracking-[0.3em]">Aucun événement annoncé</p>
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Donation Section */}
-          <div className="flex-1 p-8 md:p-12 bg-slate-50">
-            <h3 className="text-church-dark font-black text-lg mb-4 uppercase tracking-tighter">Dons & Libéralités</h3>
-            <p className="text-xs text-slate-500 mb-8 leading-relaxed">
-              Soutenez l'œuvre de Dieu par vos offrandes via nos partenaires locaux. Vos dons contribuent à l'expansion du Royaume.
-            </p>
+          {/* Donations & Mobile Money */}
+          <section id="dons" className="bg-church-dark rounded-[50px] p-10 md:p-20 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-church-blue/10 to-transparent pointer-events-none" />
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {config?.mobileMoney?.orangeMoney && (
-                <div className="bg-white border border-church-border p-5 rounded-3xl flex flex-col items-center gap-3 hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#FF7900]"></div>
-                  <div className="w-12 h-12 bg-[#FF7900] rounded-2xl flex items-center justify-center p-2 shadow-sm">
-                    <span className="text-white font-black text-xs">OM</span>
+            <div className="relative z-10 flex flex-col lg:flex-row gap-16 items-center">
+              <div className="lg:w-1/2">
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-6 leading-none">
+                  Soutenir <br/> <span className="text-church-gold">L'Œuvre de Dieu</span>
+                </h3>
+                <p className="text-lg text-white/50 font-light leading-relaxed mb-10 max-w-md">
+                  Vos contributions permettent à notre église de rayonner davantage et d'impacter notre communauté à Kinshasa et au-delà.
+                </p>
+                <Link 
+                  to="/dons"
+                  className="inline-flex items-center gap-3 px-10 py-5 bg-church-gold text-church-dark font-black rounded-xl hover:bg-white transition-all uppercase text-xs tracking-widest shadow-2xl"
+                >
+                  Faire un don maintenant
+                  <ChevronRight size={16} />
+                </Link>
+              </div>
+
+              <div className="lg:w-1/2 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {config?.mobileMoney?.orangeMoney && (
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl group hover:border-white/30 transition-all">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 bg-[#FF7900] rounded-xl flex items-center justify-center text-white font-black">OM</div>
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Orange Money</span>
+                    </div>
+                    <p className="text-xl font-black text-white">{config.mobileMoney.orangeMoney}</p>
                   </div>
-                  <div className="text-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Orange Money</span>
-                    <span className="text-sm font-black text-church-dark">{config.mobileMoney.orangeMoney}</span>
+                )}
+                {config?.mobileMoney?.airtelMoney && (
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl group hover:border-white/30 transition-all">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 bg-[#E40000] rounded-xl flex items-center justify-center text-white font-black">AM</div>
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Airtel Money</span>
+                    </div>
+                    <p className="text-xl font-black text-white">{config.mobileMoney.airtelMoney}</p>
                   </div>
-                </div>
-              )}
-              {config?.mobileMoney?.airtelMoney && (
-                <div className="bg-white border border-church-border p-5 rounded-3xl flex flex-col items-center gap-3 hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#E40000]"></div>
-                  <div className="w-12 h-12 bg-[#E40000] rounded-2xl flex items-center justify-center p-2 shadow-sm">
-                    <span className="text-white font-black text-xs">AM</span>
+                )}
+                {config?.mobileMoney?.mpesa && (
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl group hover:border-white/30 transition-all">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 bg-[#E60000] rounded-xl flex items-center justify-center text-white font-black">MPG</div>
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">M-Pesa</span>
+                    </div>
+                    <p className="text-xl font-black text-white">{config.mobileMoney.mpesa}</p>
                   </div>
-                  <div className="text-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Airtel Money</span>
-                    <span className="text-sm font-black text-church-dark">{config.mobileMoney.airtelMoney}</span>
-                  </div>
-                </div>
-              )}
-              {config?.mobileMoney?.mpesa && (
-                <div className="bg-white border border-church-border p-5 rounded-3xl flex flex-col items-center gap-3 hover:shadow-md transition-all group overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#E60000]"></div>
-                  <div className="w-12 h-12 bg-[#E60000] rounded-2xl flex items-center justify-center p-2 shadow-sm">
-                    <span className="text-white font-black text-xs">M-Pesa</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Vodacom M-Pesa</span>
-                    <span className="text-sm font-black text-church-dark">{config.mobileMoney.mpesa}</span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-            
-            <Link 
-              to="/dons"
-              className="w-full inline-block text-center py-5 bg-church-dark text-white rounded font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-church-blue transition-all"
-            >
-              Faire un don
-            </Link>
-          </div>
+          </section>
+
         </div>
       </main>
 
