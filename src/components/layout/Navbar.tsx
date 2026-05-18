@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Church, BookOpenCheck, Tv, User, Heart, Mic2, Landmark, Video, BookOpen, MessageSquare, Send, LayoutDashboard, Search, Users, Sparkles } from 'lucide-react';
+import { Menu, X, Church, BookOpenCheck, Tv, User, Heart, Mic2, Landmark, Video, BookOpen, MessageSquare, Send, LayoutDashboard, Search, Users, Sparkles, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../hooks/useSiteConfig';
@@ -196,49 +196,107 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Nav */}
+      {/* Mobile Nav Overlay */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b overflow-hidden"
-          >
-            <div className="px-4 pt-2 pb-6 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-church-dark/60 backdrop-blur-sm z-40 md:hidden"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-[80%] max-w-sm bg-white z-50 md:hidden shadow-2xl flex flex-col"
+            >
+              <div className="p-6 flex items-center justify-between border-b border-church-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-church-blue rounded-lg flex items-center justify-center">
+                    <Church size={16} className="text-white" />
+                  </div>
+                  <span className="font-display font-black text-xs uppercase tracking-widest text-church-dark">Menu</span>
+                </div>
+                <button 
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="p-2 bg-slate-50 rounded-xl text-slate-400 hover:text-church-blue transition-colors"
                 >
-                  <link.icon size={20} className="text-church-blue" />
-                  <span className="font-medium">{link.name}</span>
-                </Link>
-              ))}
-              
-              {isModerator && (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 p-3 rounded-lg text-church-accent hover:bg-amber-50 transition-colors"
-                >
-                  <LayoutDashboard size={20} />
-                  <span className="font-medium">Administration</span>
-                </Link>
-              )}
+                  <X size={20} />
+                </button>
+              </div>
 
-              <Link
-                to="/membre"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-3 p-3 rounded-lg bg-church-blue text-white"
-              >
-                <User size={20} />
-                <span className="font-medium">{user ? 'Mon Espace' : 'Espace Membre'}</span>
-              </Link>
-            </div>
-          </motion.div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Search Bar Mobile */}
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsSearchOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-4 bg-slate-50 border border-church-border rounded-2xl text-slate-400 hover:text-church-blue transition-all"
+                >
+                  <Search size={18} />
+                  <span className="text-xs font-black uppercase tracking-widest">Rechercher...</span>
+                </button>
+
+                <div className="space-y-1">
+                  <p className="px-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-3">Navigation Principale</p>
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-4 p-4 rounded-2xl transition-all",
+                        location.pathname === link.href 
+                          ? "bg-church-blue text-white shadow-lg shadow-church-blue/20" 
+                          : "text-slate-600 hover:bg-slate-50 hover:text-church-blue"
+                      )}
+                    >
+                      <link.icon size={20} className={location.pathname === link.href ? "text-white" : "text-church-blue"} />
+                      <span className="font-display font-black text-xs uppercase tracking-widest">{link.name}</span>
+                    </Link>
+                  ))}
+                </div>
+                
+                {isModerator && (
+                  <div className="pt-4 space-y-1">
+                    <p className="px-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-3">Administration</p>
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100"
+                    >
+                      <LayoutDashboard size={20} />
+                      <span className="font-display font-black text-xs uppercase tracking-widest">Tableau de Bord</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-church-border">
+                <Link
+                  to="/membre"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-between w-full p-5 bg-church-dark text-white rounded-2xl shadow-xl hover:bg-church-blue transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-white/50 mb-0.5">Espace Connecté</p>
+                      <span className="text-xs font-black uppercase tracking-widest">{user ? 'Mon Profil' : 'Se Connecter'}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-white/30 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>

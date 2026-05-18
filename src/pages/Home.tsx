@@ -192,6 +192,7 @@ export default function Home() {
                   <Calendar className="text-church-gold" size={32} />
                   Prochains Événements
                 </h3>
+                <p className="text-slate-400 text-xs font-medium mt-2">Ne manquez aucun de nos rendez-vous spirituels cette semaine.</p>
               </div>
               <Link 
                 to="/programmes" 
@@ -202,7 +203,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {eventsLoading ? (
                 [1, 2, 3].map(i => (
                   <div key={i} className="h-64 bg-slate-50 rounded-[40px] animate-pulse border border-slate-100" />
@@ -215,15 +216,16 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                     viewport={{ once: true }}
+                    className="relative"
                   >
                     <Link 
                       to="/programmes" 
-                      className="group block h-full bg-white border border-church-border rounded-[40px] p-8 hover:shadow-2xl hover:border-church-gold transition-all relative overflow-hidden"
+                      className="group block h-full bg-white border border-church-border rounded-[40px] p-8 hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] hover:border-church-gold transition-all relative overflow-hidden"
                     >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-110 transition-transform" />
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-110 group-hover:bg-church-gold/10 transition-all duration-500" />
                       
                       <div className="flex items-start justify-between mb-8 relative z-10">
-                        <div className="w-16 h-16 bg-church-gold text-white rounded-2xl flex flex-col items-center justify-center shadow-lg group-hover:rotate-3 transition-transform">
+                        <div className="w-16 h-16 bg-church-gold text-white rounded-2xl flex flex-col items-center justify-center shadow-lg group-hover:rotate-3 group-hover:scale-110 transition-all duration-500">
                           <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">
                             {format(event.start.toDate(), 'MMM', { locale: fr })}
                           </span>
@@ -240,17 +242,21 @@ export default function Home() {
                         {event.title}
                       </h4>
 
-                      <div className="space-y-2 relative z-10">
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <Clock size={14} className="text-church-gold" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                      <div className="space-y-3 relative z-10">
+                        <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-600 transition-colors">
+                          <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-church-gold/10">
+                            <Clock size={12} className="text-church-gold" />
+                          </div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider">
                             À partir de {format(event.start.toDate(), 'HH:mm')}
                           </span>
                         </div>
                         {event.location && (
-                          <div className="flex items-center gap-2 text-slate-400">
-                            <MapPin size={14} className="text-church-gold" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider truncate">
+                          <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-600 transition-colors">
+                            <div className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-church-gold/10">
+                              <MapPin size={12} className="text-church-gold" />
+                            </div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider truncate">
                               {event.location}
                             </span>
                           </div>
@@ -258,20 +264,23 @@ export default function Home() {
                       </div>
 
                       <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-                        <span className="text-[9px] font-black text-church-gold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                          En savoir plus
+                        <span className="text-[10px] font-black text-church-gold uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          Réserver ma place
                         </span>
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-church-gold group-hover:text-white transition-all">
-                          <ChevronRight size={16} />
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-church-gold group-hover:text-white group-hover:rotate-[-45deg] transition-all duration-500">
+                          <ChevronRight size={18} />
                         </div>
                       </div>
                     </Link>
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                  <Calendar size={48} className="opacity-10 mb-6" />
-                  <p className="text-xs font-black uppercase tracking-[0.3em]">Aucun événement annoncé</p>
+                <div className="col-span-full py-24 bg-slate-50 rounded-[50px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <Calendar size={32} className="opacity-20" />
+                  </div>
+                  <p className="text-sm font-black uppercase tracking-[0.3em]">Aucun événement annoncé</p>
+                  <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest font-bold">Revenez bientôt pour nos prochaines dates</p>
                 </div>
               )}
             </div>
