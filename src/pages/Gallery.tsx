@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Image as ImageIcon, Video, Play, Maximize2, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface MediaItem {
   id: string;
@@ -22,6 +22,9 @@ export default function Gallery() {
     const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMediaItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MediaItem[]);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'gallery');
       setLoading(false);
     });
     return () => unsubscribe();

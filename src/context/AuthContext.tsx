@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface UserProfile {
   uid: string;
@@ -60,6 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setDoc(userRef, newProfile);
             setProfile(newProfile);
           }
+          setLoading(false);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
           setLoading(false);
         });
 

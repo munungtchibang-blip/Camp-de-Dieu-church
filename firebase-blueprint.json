@@ -206,6 +206,27 @@
         },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "LiveSubscription": {
+      "title": "Live Stream Subscription",
+      "description": "User subscription for live stream alerts.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "GalleryImage": {
+      "title": "Gallery Image",
+      "description": "An image stored for the site gallery.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["url", "createdAt"]
     }
   },
   "firestore": {
@@ -252,6 +273,14 @@
     "/config/{configId}": {
       "schema": "SiteConfig",
       "description": "Global site settings."
+    },
+    "/live_subscriptions/{subId}": {
+      "schema": "LiveSubscription",
+      "description": "Live stream email alerts subscriptions."
+    },
+    "/site_gallery/{imageId}": {
+      "schema": "GalleryImage",
+      "description": "Images for the site hero/gallery."
     }
   }
 }

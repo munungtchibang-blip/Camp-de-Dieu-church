@@ -1,24 +1,77 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Facebook, Youtube, Instagram, MessageSquare, Megaphone, Twitter, MapPin, Phone, Mail } from 'lucide-react';
+import { Calendar, Facebook, Youtube, Instagram, MessageSquare, Megaphone, Twitter, MapPin, Phone, Mail, Clock, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerseOfTheDay from '../components/ai/VerseOfTheDay';
 import NewsFeed from '../components/news/NewsFeed';
 import { useSiteConfig } from '../hooks/useSiteConfig';
+import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+interface Event {
+  id: string;
+  title: string;
+  start: Timestamp;
+  type: string;
+  location?: string;
+}
 
 export default function Home() {
-  const { config, loading } = useSiteConfig();
-  const [randomImage, setRandomImage] = useState<string>('');
+  const { config, loading: configLoading } = useSiteConfig();
+  const [randomImage, setRandomImage] = useState<{ url: string; description: string }>({ url: '', description: '' });
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   useEffect(() => {
-    if (config?.hero?.imageUrls && config.hero.imageUrls.length > 0) {
-      const urls = config.hero.imageUrls;
-      const randomIdx = Math.floor(Math.random() * urls.length);
-      setRandomImage(urls[randomIdx]);
+    const fetchEvents = async () => {
+      try {
+        const now = new Date();
+        const q = query(
+          collection(db, 'events'),
+          where('start', '>=', Timestamp.fromDate(now)),
+          orderBy('start', 'asc'),
+          limit(3)
+        );
+        const snapshot = await getDocs(q);
+        const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Event[];
+        setUpcomingEvents(eventsData);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    if (config?.hero?.galleryImages && config.hero.galleryImages.length > 0) {
+      const items = config.hero.galleryImages;
+      
+      // Initial random image
+      const randomIdx = Math.floor(Math.random() * items.length);
+      setRandomImage(items[randomIdx]);
+
+      // Set up interval for auto-sliding every 60 seconds (1 minute)
+      const interval = setInterval(() => {
+        setRandomImage(current => {
+          const currentIndex = items.findIndex(img => img.url === current.url);
+          const nextIndex = (currentIndex + 1) % items.length;
+          return items[nextIndex];
+        });
+      }, 60000);
+
+      return () => clearInterval(interval);
     } else if (config?.hero?.imageUrl) {
-      setRandomImage(config.hero.imageUrl);
+      setRandomImage({ url: config.hero.imageUrl, description: 'Bannière d\'accueil' });
     } else {
-      setRandomImage("https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1600&auto=format&fit=crop");
+      setRandomImage({
+        url: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1600&auto=format&fit=crop",
+        description: "Image d'accueil par défaut montrant une église"
+      });
     }
   }, [config]);
 
@@ -50,11 +103,17 @@ export default function Home() {
       <main className="flex-1 flex flex-col lg:flex-row">
         {/* Left: Hero & News Section */}
         <div className="w-full lg:w-2/3 flex flex-col">
-          <div className="relative min-h-[500px] flex items-center px-6 md:px-20 group overflow-hidden">
-            <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
-              style={{ backgroundImage: `url('${randomImage || hero.imageUrl}')` }}
-            ></div>
+          <div className="relative min-h-[500px] flex items-center px-6 md:px-20 group overflow-hidden" aria-label={randomImage.description}>
+            <motion.div 
+              key={randomImage.url || 'default'}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.5, ease: "easeInOut" }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url('${randomImage.url || hero.imageUrl}')` }}
+              role="img"
+              aria-label={randomImage.description}
+            />
             <div className="absolute inset-0 bg-gradient-to-r from-church-dark/95 via-church-dark/50 to-transparent"></div>
             
             <div className="relative z-10 max-w-xl py-20">
@@ -106,27 +165,63 @@ export default function Home() {
 
         {/* Right Panel: Info & Quick Actions */}
         <div className="w-full lg:w-1/3 flex flex-col bg-white border-l border-church-border">
-          {/* Worship Schedule Card */}
-          <div className="p-8 md:p-12 border-b border-church-border">
-            <h3 className="text-church-dark font-black text-lg mb-8 flex items-center gap-2 uppercase tracking-tight">
-              <Calendar className="w-5 h-5 text-church-accent" />
-              Prochainement
-            </h3>
+          {/* Worship Schedule Card -> Now NEXT 3 EVENTS */}
+          <div className="p-8 md:p-12 border-b border-church-border bg-slate-50/30">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-church-dark font-black text-lg flex items-center gap-2 uppercase tracking-tight">
+                <Calendar className="w-5 h-5 text-church-blue" />
+                Calendrier
+              </h3>
+              <Link to="/programmes" className="text-[9px] font-black text-church-blue uppercase tracking-widest hover:underline flex items-center gap-1">
+                Voir tout <ChevronRight size={10} />
+              </Link>
+            </div>
+
             <div className="space-y-4">
-              <Link to="/programmes" className="block p-4 rounded-xl bg-blue-50 border border-blue-100 shadow-sm hover:shadow-md transition-all">
-                <p className="text-[10px] font-black text-church-blue uppercase tracking-widest mb-1">Culte de Célébration</p>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-bold text-church-dark">Tous les Dimanches</p>
-                  <p className="text-xl font-black text-church-dark">09:00</p>
+              {eventsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
+                  ))}
                 </div>
-              </Link>
-              <Link to="/programmes" className="block p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Intercession & Enseignement</p>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-bold text-slate-600">Tous les Mercredis</p>
-                  <p className="text-xl font-black text-slate-300">17:30</p>
+              ) : upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event, idx) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Link to="/programmes" className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-church-border hover:shadow-md transition-all group">
+                      <div className="w-14 h-14 bg-church-blue rounded-xl flex flex-col items-center justify-center text-center text-white shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                        <span className="text-[8px] font-black uppercase leading-tight">{format(event.start.toDate(), 'MMM', { locale: fr })}</span>
+                        <span className="text-xl font-black leading-none">{format(event.start.toDate(), 'dd')}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] font-black text-church-accent uppercase tracking-widest mb-0.5">{event.type}</p>
+                        <h4 className="text-xs font-black text-church-dark uppercase truncate mb-1">{event.title}</h4>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <Clock size={10} />
+                            <span className="text-[9px] font-bold">{format(event.start.toDate(), 'HH:mm')}</span>
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center gap-1 text-slate-400">
+                              <MapPin size={10} />
+                              <span className="text-[9px] font-bold truncate max-w-[80px]">{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="py-12 border-2 border-dashed border-church-border rounded-3xl flex flex-col items-center justify-center text-slate-400">
+                  <Calendar size={32} className="opacity-20 mb-3" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Aucun évènement prévu</p>
                 </div>
-              </Link>
+              )}
             </div>
           </div>
 

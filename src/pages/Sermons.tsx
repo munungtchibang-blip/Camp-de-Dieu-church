@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Mic2, Download, FileText, Search, Play, Filter, Calendar as CalendarIcon, User, Loader2 } from 'lucide-react';
+import { Mic2, Download, FileText, Search, Play, Filter, Calendar as CalendarIcon, User, Loader2, Share2, Facebook, Twitter, Mail, Copy, Check } from 'lucide-react';
 import { collection, query, orderBy, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { cn } from '../lib/utils';
@@ -21,7 +21,6 @@ interface Sermon {
   imageUrl?: string;
 }
 
-const categories = ["Tous", "Foi", "Famille", "Délivrance", "Jeunesse"];
 const sortingOptions = [
   { id: 'newest', label: 'Plus récent' },
   { id: 'oldest', label: 'Plus ancien' },
@@ -32,12 +31,40 @@ export default function Sermons() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [sermons, setSermons] = useState<Sermon[]>([]);
+  const [categories, setCategories] = useState<string[]>(["Tous"]);
   const [loading, setLoading] = useState(true);
   const [preachers, setPreachers] = useState<string[]>([]);
   const [selectedPreacher, setSelectedPreacher] = useState("Tous");
   const [selectedYear, setSelectedYear] = useState("Tous");
   const [selectedMonth, setSelectedMonth] = useState("Tous");
   const [activeAudio, setActiveAudio] = useState<string | null>(null);
+  const [sharingSermon, setSharingSermon] = useState<Sermon | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async (sermon: Sermon) => {
+    const shareData = {
+      title: sermon.title,
+      text: `Écoutez le sermon "${sermon.title}" par ${sermon.preacher} sur CDD Kinshasa.`,
+      url: window.location.href, // In a real app, this would be a deep link to the sermon
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log("Error sharing:", err);
+        setSharingSermon(sermon);
+      }
+    } else {
+      setSharingSermon(sermon);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const years = ["Tous", ...Array.from(new Set(sermons.map(s => {
     const d = s.date?.toDate ? s.date.toDate() : new Date(s.date);
@@ -68,6 +95,10 @@ export default function Sermons() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Sermon[];
       setSermons(data);
       
+      // Extract unique categories dynamically
+      const uniqueCategories = Array.from(new Set(data.map(s => s.category))).filter(Boolean);
+      setCategories(["Tous", ...uniqueCategories]);
+
       // Extract unique preachers
       const uniquePreachers = Array.from(new Set(data.map(s => s.preacher))).filter(Boolean);
       setPreachers(["Tous", ...uniquePreachers]);
@@ -226,10 +257,16 @@ export default function Sermons() {
                       <Play fill="currentColor" size={28} />
                     </div>
                   </div>
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-4 left-4 flex justify-between w-[calc(100%-32px)]">
                     <span className="px-3 py-1 bg-church-blue text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg">
                       {sermon.category}
                     </span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleShare(sermon); }}
+                      className="p-2 bg-white/20 backdrop-blur-md text-white rounded-lg hover:bg-church-gold hover:text-church-dark transition-all"
+                    >
+                      <Share2 size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -306,6 +343,8 @@ export default function Sermons() {
                 setSearchTerm("");
                 setActiveTab("Tous");
                 setSelectedPreacher("Tous");
+                setSelectedYear("Tous");
+                setSelectedMonth("Tous");
               }}
               className="mt-8 px-8 py-3 bg-church-blue text-white rounded-xl font-black text-[10px] uppercase tracking-widest"
             >
@@ -314,6 +353,84 @@ export default function Sermons() {
           </div>
         )}
       </div>
+
+      {/* Share Modal Backdrop */}
+      <AnimatePresence>
+        {sharingSermon && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-church-dark/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={() => setSharingSermon(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[40px] w-full max-w-sm overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xl font-black text-church-dark uppercase tracking-tight">Partager</h3>
+                  <button onClick={() => setSharingSermon(null)} className="text-slate-400 hover:text-church-dark transition-colors">
+                    <Check size={24} />
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <a 
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl hover:bg-blue-50 transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                      <Facebook size={20} />
+                    </div>
+                    <span className="text-xs font-black text-church-dark uppercase tracking-widest">Facebook</span>
+                  </a>
+
+                  <a 
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Écoutez "${sharingSermon.title}" par ${sharingSermon.preacher}`)}&url=${encodeURIComponent(window.location.href)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white">
+                      <Twitter size={20} />
+                    </div>
+                    <span className="text-xs font-black text-church-dark uppercase tracking-widest">X (Twitter)</span>
+                  </a>
+
+                  <a 
+                    href={`mailto:?subject=${encodeURIComponent(sharingSermon.title)}&body=${encodeURIComponent(`Voici un sermon inspirant à écouter : ${window.location.href}`)}`}
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-slate-400 rounded-xl flex items-center justify-center text-white">
+                      <Mail size={20} />
+                    </div>
+                    <span className="text-xs font-black text-church-dark uppercase tracking-widest">Email</span>
+                  </a>
+
+                  <button 
+                    onClick={() => copyToClipboard(window.location.href)}
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl hover:bg-church-blue/10 transition-all group w-full text-left"
+                  >
+                    <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-church-blue">
+                      {copied ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                    </div>
+                    <span className="text-xs font-black text-church-dark uppercase tracking-widest">
+                      {copied ? 'Lien copié !' : 'Copier le lien'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

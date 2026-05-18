@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -39,23 +39,14 @@ async function startServer() {
     }
 
     try {
-      const ai = new GoogleGenAI({ 
-        apiKey: process.env.GEMINI_API_KEY,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: systemInstruction 
       });
       
-      const model = ai.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        systemInstruction: systemInstruction,
-      });
-
-      const response = await model.generateContent(prompt);
-      const result = await response.response;
-      const text = result.text();
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
 
       console.log("AI Generation successful");
       res.json({ text: text || "" });

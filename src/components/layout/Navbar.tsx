@@ -62,8 +62,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-church-blue rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg border-2 border-church-gold uppercase">
-              {logoText || "CDD"}
+            <div className="w-12 h-12 bg-church-blue rounded-full flex items-center justify-center overflow-hidden shadow-lg border-2 border-church-gold relative group">
+              {config?.identity?.logoUrl ? (
+                <img 
+                  src={config.identity.logoUrl} 
+                  alt={churchName} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="text-white font-bold text-xl uppercase">{logoText || "CDD"}</span>
+              )}
             </div>
             <div className="hidden sm:block">
               <h1 className={cn(

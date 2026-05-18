@@ -105,5 +105,17 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isModerator();
     }
+
+    // 14. Live Subscriptions
+    match /live_subscriptions/{subId} {
+      allow create: if true;
+      allow read, write: if isModerator();
+    }
+
+    // 15. Site Gallery
+    match /site_gallery/{imageId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
   }
 }

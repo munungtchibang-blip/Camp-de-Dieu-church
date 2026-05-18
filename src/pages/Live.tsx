@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Youtube, Video, MessageCircle, Activity, Calendar, Clock, MapPin, Share2, Tv } from 'lucide-react';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { Youtube, Video, MessageCircle, Activity, Calendar, Clock, MapPin, Share2, Tv, Bell, CheckCircle2, Loader2 } from 'lucide-react';
+import { collection, query, where, onSnapshot, Timestamp, addDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -22,6 +22,34 @@ export default function Live() {
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Notification form state
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubscribe = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      await addDoc(collection(db, 'live_subscriptions'), {
+        email,
+        createdAt: Timestamp.now()
+      });
+      setSubmitted(true);
+      setEmail('');
+    } catch (err) {
+      console.error("Subscription error:", err);
+      setError("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const q = query(
@@ -49,6 +77,9 @@ export default function Live() {
         .slice(0, 3);
       
       setUpcomingEvents(future);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'events');
       setLoading(false);
     });
 
@@ -227,6 +258,66 @@ export default function Live() {
                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Aucun évènement planifié</p>
                     </div>
                   )}
+                </div>
+              </div>
+              
+              {/* Notification Subscription Section */}
+              <div className="md:col-span-2 p-10 bg-gradient-to-br from-church-blue/10 to-transparent border border-white/5 rounded-[40px] relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Bell size={120} />
+                </div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                  <div className="max-w-md">
+                    <div className="w-12 h-12 bg-church-blue/20 rounded-2xl flex items-center justify-center text-church-blue mb-4">
+                      <Bell size={24} />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Alertes Directs</h3>
+                    <p className="text-white/50 text-sm font-medium leading-relaxed">
+                      Ne manquez plus aucun moment de gloire. Laissez votre email pour être alerté dès qu'un nouveau direct commence.
+                    </p>
+                  </div>
+                  
+                  <div className="flex-1 w-full">
+                    {submitted ? (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-green-500/10 border border-green-500/20 p-8 rounded-3xl flex flex-col items-center text-center"
+                      >
+                        <CheckCircle2 size={48} className="text-green-500 mb-4" />
+                        <h4 className="text-lg font-black text-white mb-1 uppercase tracking-tight">Inscription Réussie</h4>
+                        <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Vous recevrez désormais nos alertes.</p>
+                      </motion.div>
+                    ) : (
+                      <form onSubmit={handleSubscribe} className="space-y-4">
+                        <div className="relative">
+                          <input 
+                            type="email" 
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="votre.email@exemple.com"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-church-blue transition-all"
+                          />
+                          <button 
+                            type="submit"
+                            disabled={submitting}
+                            className="absolute right-2 top-2 bottom-2 px-8 bg-church-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-dark transition-all disabled:opacity-50 flex items-center gap-2"
+                          >
+                            {submitting ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              'S\'abonner'
+                            )}
+                          </button>
+                        </div>
+                        {error && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest">{error}</p>}
+                        <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.2em] text-center">
+                          Nous respectons votre vie privée • Désabonnement en un clic
+                        </p>
+                      </form>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

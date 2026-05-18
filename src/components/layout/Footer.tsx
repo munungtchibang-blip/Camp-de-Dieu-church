@@ -23,8 +23,17 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-church-blue rounded-full flex items-center justify-center text-white font-bold border-2 border-church-gold/20 shadow-md uppercase">
-              {logoText || "CDD"}
+            <div className="w-10 h-10 bg-church-blue rounded-full flex items-center justify-center overflow-hidden text-white font-bold border-2 border-church-gold/20 shadow-md">
+              {config?.identity?.logoUrl ? (
+                <img 
+                  src={config.identity.logoUrl} 
+                  alt={churchName} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="uppercase">{logoText || "CDD"}</span>
+              )}
             </div>
             <div>
               <p className="font-display font-black text-church-dark uppercase tracking-widest text-sm">{churchName}</p>

@@ -20,10 +20,15 @@ interface Sermon {
 
 export default function SermonManager() {
   const [sermons, setSermons] = useState<Sermon[]>([]);
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+  
+  // Search & Filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("Tous");
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -40,12 +45,19 @@ export default function SermonManager() {
     imageUrl: ''
   });
 
-  const categories = ["Foi", "Famille", "Délivrance", "Jeunesse"];
+  const defaultCategories = ["Foi", "Famille", "Délivrance", "Jeunesse"];
+  const allCategoriesForForm = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
 
   useEffect(() => {
     const q = query(collection(db, 'sermons'), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setSermons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Sermon[]);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Sermon[];
+      setSermons(data);
+      
+      // Extract unique categories from DB
+      const uniqueCats = Array.from(new Set(data.map(s => s.category))).filter(Boolean);
+      setDbCategories(uniqueCats);
+      
       setLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'sermons');
@@ -179,13 +191,25 @@ export default function SermonManager() {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Catégorie</label>
-                <select 
-                  value={newSermon.category}
-                  onChange={e => setNewSermon({...newSermon, category: e.target.value})}
-                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue"
-                >
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <div className="flex gap-2">
+                  <select 
+                    value={newSermon.category}
+                    onChange={e => setNewSermon({...newSermon, category: e.target.value})}
+                    className="flex-1 bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue"
+                  >
+                    {allCategoriesForForm.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const custom = prompt("Nouvelle catégorie :");
+                      if (custom) setNewSermon({...newSermon, category: custom});
+                    }}
+                    className="px-4 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all text-xs font-bold"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -301,7 +325,42 @@ export default function SermonManager() {
       </div>
 
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-church-border">
-        <h2 className="text-xl font-black text-church-dark mb-8 uppercase tracking-tight">Liste des Prédications</h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <h2 className="text-xl font-black text-church-dark uppercase tracking-tight">Liste des Prédications</h2>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative">
+              <input 
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Rechercher..."
+                className="pl-4 pr-10 py-2 bg-slate-50 border border-church-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-church-blue w-48"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrer:</span>
+              <select 
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+                className="bg-slate-50 border border-church-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-church-blue"
+              >
+                <option value="Tous">Tous les messages</option>
+                {allCategoriesForForm.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {(searchTerm || categoryFilter !== "Tous") && (
+              <button 
+                onClick={() => { setSearchTerm(""); setCategoryFilter("Tous"); }}
+                className="px-4 py-2 bg-church-blue/10 text-church-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-blue hover:text-white transition-all"
+              >
+                Réinitialiser les filtres
+              </button>
+            )}
+          </div>
+        </div>
         
         {loading ? (
           <div className="py-12 text-center text-slate-400 uppercase font-black text-[10px] tracking-widest">
@@ -320,7 +379,13 @@ export default function SermonManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {sermons.map(sermon => (
+                {sermons
+                  .filter(s => {
+                    const matchesSearch = s.title.toLowerCase().includes(searchTerm.toLowerCase()) || s.preacher.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesCategory = categoryFilter === "Tous" || s.category === categoryFilter;
+                    return matchesSearch && matchesCategory;
+                  })
+                  .map(sermon => (
                   <tr key={sermon.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-4 pr-4">
                       <div className="flex items-center gap-3">

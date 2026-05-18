@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import { User, Target, Heart, Shield } from 'lucide-react';
 
@@ -26,6 +26,9 @@ export default function About() {
         ...doc.data()
       })) as TeamMember[];
       setTeam(teamList);
+      setLoadingTeam(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'team');
       setLoadingTeam(false);
     });
     return () => unsubscribe();

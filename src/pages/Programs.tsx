@@ -1,11 +1,11 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Bell, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface Event {
   id: string;
@@ -21,11 +21,15 @@ export default function Programs() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'events'), orderBy('start', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Event));
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'events');
       setLoading(false);
     });
     return () => unsubscribe();
@@ -80,6 +84,16 @@ export default function Programs() {
                   </h2>
                   <div className="flex gap-2">
                     <button 
+                      onClick={() => {
+                        const today = new Date();
+                        setCurrentDate(today);
+                        setSelectedDate(today);
+                      }}
+                      className="px-3 py-1 bg-white border border-church-border rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-church-blue hover:border-church-blue transition-all"
+                    >
+                      Aujourd'hui
+                    </button>
+                    <button 
                       onClick={() => setCurrentDate(subMonths(currentDate, 1))}
                       className="p-2 hover:bg-white rounded-xl border border-church-border transition-colors text-slate-400 hover:text-church-blue"
                     >
@@ -101,34 +115,72 @@ export default function Programs() {
                     </div>
                   ))}
                   {calendarDays.map((day, i) => {
-                    const hasEvent = events.some(e => {
+                    const dayEvents = events.filter(e => {
                       try {
                         const eventDate = parseISO(e.start);
                         return isValid(eventDate) && isSameDay(eventDate, day);
                       } catch { return false; }
                     });
+                    const hasEvent = dayEvents.length > 0;
                     const isSelected = isSameDay(day, selectedDate);
                     const isCurrentMonth = isSameMonth(day, monthStart);
 
                     return (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedDate(day)}
-                        className={cn(
-                          "aspect-square relative flex flex-col items-center justify-center rounded-2xl transition-all border",
-                          !isCurrentMonth ? "opacity-20 pointer-events-none" : "hover:scale-105",
-                          isSelected ? "bg-church-dark text-white border-church-dark shadow-lg ring-4 ring-blue-100" : "bg-white border-transparent text-slate-700 hover:bg-blue-50",
-                          hasEvent && !isSelected ? "border-church-gold/30" : ""
-                        )}
-                      >
-                        <span className="text-sm font-black">{format(day, 'd')}</span>
-                        {hasEvent && (
-                          <div className={cn(
-                            "w-1.5 h-1.5 rounded-full mt-1",
-                            isSelected ? "bg-church-gold" : "bg-church-accent animate-pulse"
-                          )}></div>
-                        )}
-                      </button>
+                      <div key={i} className="relative">
+                        <button
+                          onClick={() => setSelectedDate(day)}
+                          onMouseEnter={() => setHoveredDate(day)}
+                          onMouseLeave={() => setHoveredDate(null)}
+                          className={cn(
+                            "aspect-square w-full relative flex flex-col items-center justify-center rounded-2xl transition-all border",
+                            !isCurrentMonth ? "opacity-20 pointer-events-none" : "hover:scale-105",
+                            isSelected ? "bg-church-dark text-white border-church-dark shadow-lg ring-4 ring-blue-100" : "bg-white border-transparent text-slate-700 hover:bg-blue-50",
+                            hasEvent && !isSelected ? "border-church-gold/30" : ""
+                          )}
+                        >
+                          <span className="text-sm font-black">{format(day, 'd')}</span>
+                          {hasEvent && (
+                            <div className={cn(
+                              "w-1.5 h-1.5 rounded-full mt-1",
+                              isSelected ? "bg-church-gold" : "bg-church-accent animate-pulse"
+                            )}></div>
+                          )}
+                        </button>
+
+                        <AnimatePresence>
+                          {hoveredDate && isSameDay(hoveredDate, day) && hasEvent && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-56 bg-white rounded-2xl shadow-2xl border border-church-border p-4 z-50 pointer-events-none"
+                            >
+                              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-50">
+                                <CalendarIcon size={12} className="text-church-blue" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                  {format(day, 'd MMMM', { locale: fr })}
+                                </span>
+                              </div>
+                              <div className="space-y-3">
+                                {dayEvents.map(e => (
+                                  <div key={e.id} className="border-l-2 border-church-accent pl-3 py-0.5">
+                                    <p className="text-[10px] font-black text-church-dark uppercase leading-tight line-clamp-2 mb-1">{e.title}</p>
+                                    <div className="flex items-center gap-1.5 opacity-60">
+                                      <Clock size={8} className="text-church-gold" />
+                                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
+                                        {format(parseISO(e.start), "HH'h'mm")} • {e.location}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                                <div className="w-3 h-3 bg-white border-r border-b border-church-border rotate-45" />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     );
                   })}
                 </div>
@@ -146,37 +198,52 @@ export default function Programs() {
 
                   <div className="space-y-6">
                     {filteredEvents.length > 0 ? (
-                      filteredEvents.map(event => (
-                        <motion.div 
-                          key={event.id}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="group"
-                        >
-                          <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-church-border">
-                            <div className={cn(
-                              "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm",
-                              event.type === 'Culte' ? "bg-blue-100 text-church-blue" : "bg-amber-100 text-church-accent"
-                            )}>
-                              <Clock size={24} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[9px] font-black text-church-accent uppercase tracking-widest mb-1">{event.type}</p>
-                              <h4 className="text-sm font-black text-church-dark mb-2 group-hover:text-church-blue transition-colors truncate">{event.title}</h4>
-                              <div className="space-y-1 text-[11px] text-slate-500 font-medium">
-                                <div className="flex items-center gap-2">
-                                  <Clock size={12} className="text-church-gold" />
-                                  <span>{format(parseISO(event.start), "HH'h'mm")}</span>
+                      filteredEvents.map(event => {
+                        const eventDate = parseISO(event.start);
+                        const isUpcoming = eventDate > new Date();
+                                             return (
+                            <motion.div 
+                              key={event.id}
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className={cn(
+                                "group relative p-4 rounded-2xl transition-all border",
+                                isUpcoming 
+                                  ? "bg-blue-50/30 border-church-blue/10 hover:border-church-blue/30" 
+                                  : "bg-slate-50/50 border-transparent grayscale-[0.5] opacity-70"
+                              )}
+                            >
+                              <div className="flex items-start gap-4">
+                                {isUpcoming && (
+                                  <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-church-blue text-white rounded-lg shadow-sm">
+                                    <div className="w-1 h-1 rounded-full bg-white animate-ping" />
+                                    <span className="text-[7px] font-black uppercase tracking-[0.1em]">Bientôt</span>
+                                  </div>
+                                )}
+                                <div className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                  event.type === 'Culte' ? "bg-white text-church-blue" : "bg-white text-church-accent"
+                                )}>
+                                  <Clock size={24} />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <MapPin size={12} className="text-church-gold" />
-                                  <span className="truncate">{event.location}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[9px] font-black text-church-accent uppercase tracking-widest mb-1">{event.type}</p>
+                                  <h4 className="text-sm font-black text-church-dark mb-2 group-hover:text-church-blue transition-colors truncate">{event.title}</h4>
+                                  <div className="space-y-1 text-[11px] text-slate-500 font-medium">
+                                    <div className="flex items-center gap-2">
+                                      <Clock size={12} className="text-church-gold" />
+                                      <span>{format(eventDate, "HH'h'mm")}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <MapPin size={12} className="text-church-gold" />
+                                      <span className="truncate">{event.location}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))
+                            </motion.div>
+                          );
+                        })
                     ) : (
                       <div className="text-center py-20 opacity-30 flex flex-col items-center">
                         <Bell size={48} className="mb-4" />
