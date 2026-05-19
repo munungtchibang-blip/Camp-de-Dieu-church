@@ -39,6 +39,7 @@ export interface SiteConfig {
     youtube: string;
     instagram: string;
     twitter: string;
+    tiktok?: string;
     liveUrl: string;
     nextLiveTitle?: string;
     nextLiveDate?: string;
@@ -47,6 +48,15 @@ export interface SiteConfig {
     orangeMoney: string;
     airtelMoney: string;
     mpesa: string;
+    moneygram?: string;
+    westernUnion?: string;
+  };
+  banking?: {
+    accountName: string;
+    bankName: string;
+    accountNumber: string;
+    iban?: string;
+    swift?: string;
   };
 }
 
@@ -99,6 +109,7 @@ export function useSiteConfig() {
               youtube: data.socials?.youtube || '',
               instagram: data.socials?.instagram || '',
               twitter: data.socials?.twitter || '',
+              tiktok: data.socials?.tiktok || '',
               liveUrl: data.socials?.liveUrl || '',
               nextLiveTitle: data.socials?.nextLiveTitle || '',
               nextLiveDate: data.socials?.nextLiveDate || '',
@@ -107,6 +118,15 @@ export function useSiteConfig() {
               orangeMoney: data.mobileMoney?.orangeMoney || '',
               airtelMoney: data.mobileMoney?.airtelMoney || '',
               mpesa: data.mobileMoney?.mpesa || '',
+              moneygram: data.mobileMoney?.moneygram || '',
+              westernUnion: data.mobileMoney?.westernUnion || '',
+            },
+            banking: {
+              accountName: data.banking?.accountName || '',
+              bankName: data.banking?.bankName || '',
+              accountNumber: data.banking?.accountNumber || '',
+              iban: data.banking?.iban || '',
+              swift: data.banking?.swift || '',
             }
           }));
         }

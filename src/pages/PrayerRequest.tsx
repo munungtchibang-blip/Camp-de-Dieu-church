@@ -1,10 +1,12 @@
-import { motion } from 'framer-motion';
-import React, { useState } from 'react';
-import { MessageSquare, Send, Heart, Shield, CheckCircle2, Loader2, User as UserIcon, Phone, Mail } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, Send, Heart, Shield, CheckCircle2, Loader2, User as UserIcon, Phone, Mail, Clock, MessageCircle, Bell } from 'lucide-react';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function PrayerRequest() {
   const { user } = useAuth();
@@ -17,8 +19,33 @@ export default function PrayerRequest() {
     phone: '',
     category: 'Requête Personnelle',
     content: '',
-    isAnonymous: false
+    isAnonymous: false,
+    preferredPrayerTime: '',
+    reminderTime: ''
   });
+
+  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoadingHistory(false);
+      return;
+    }
+    const q = query(
+      collection(db, 'prayer_requests'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setMyRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoadingHistory(false);
+    }, (error) => {
+      console.error("History error:", error);
+      setLoadingHistory(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -91,7 +118,7 @@ export default function PrayerRequest() {
   }
 
   return (
-    <div className="pt-32 pb-20 bg-church-bg min-h-screen">
+    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           <motion.div
@@ -101,11 +128,11 @@ export default function PrayerRequest() {
             <div className="inline-block bg-church-gold/10 text-church-gold px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
               Intercession
             </div>
-            <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark mb-8 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark dark:text-white mb-8 leading-tight">
               Demander la <br />
               <span className="text-church-gold">Prière</span>
             </h1>
-            <p className="text-slate-500 text-lg mb-12 font-medium leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-lg mb-12 font-medium leading-relaxed">
               "Ne vous inquiétez de rien; mais en toute chose faites connaître vos besoins à Dieu par des prières et des supplications, avec des actions de grâces." - Philippiens 4:6
             </p>
 
@@ -115,12 +142,12 @@ export default function PrayerRequest() {
                 { icon: MessageSquare, title: "Accompagnement", desc: "Notre équipe d'intercesseurs prie quotidiennement pour chaque besoin." },
               ].map((item, i) => (
                 <div key={i} className="flex gap-6">
-                  <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-church-border flex items-center justify-center text-church-gold flex-shrink-0">
+                  <div className="w-14 h-14 bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-church-border dark:border-dark-border flex items-center justify-center text-church-gold flex-shrink-0">
                     <item.icon size={28} />
                   </div>
                   <div>
-                    <h3 className="font-black text-church-dark uppercase tracking-tight mb-1">{item.title}</h3>
-                    <p className="text-slate-500 text-sm font-medium">{item.desc}</p>
+                    <h3 className="font-black text-church-dark dark:text-white uppercase tracking-tight mb-1">{item.title}</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -130,7 +157,7 @@ export default function PrayerRequest() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white p-8 md:p-12 rounded-[48px] shadow-2xl border border-church-border relative"
+            className="bg-white dark:bg-dark-card p-8 md:p-12 rounded-[48px] shadow-2xl border border-church-border dark:border-dark-border relative"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
@@ -140,40 +167,40 @@ export default function PrayerRequest() {
                     id="anonymous"
                     checked={formData.isAnonymous}
                     onChange={e => setFormData({...formData, isAnonymous: e.target.checked})}
-                    className="w-4 h-4 text-church-gold border-slate-200 rounded focus:ring-church-gold"
+                    className="w-4 h-4 text-church-gold border-slate-200 dark:border-slate-700 rounded focus:ring-church-gold"
                   />
-                  <label htmlFor="anonymous" className="text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer">Envoyer anonymement</label>
+                  <label htmlFor="anonymous" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest cursor-pointer">Envoyer anonymement</label>
                 </div>
 
                 {!formData.isAnonymous && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Nom Complet</label>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Nom Complet</label>
                       <div className="relative">
-                        <UserIcon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                        <UserIcon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" />
                         <input 
                           type="text"
                           value={formData.name}
                           onChange={e => setFormData({...formData, name: e.target.value})}
                           className={cn(
-                            "w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
-                            errors.name ? "border-red-500" : "border-slate-100"
+                            "w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 dark:text-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
+                            errors.name ? "border-red-500" : "border-slate-100 dark:border-slate-700"
                           )}
                         />
                       </div>
                       {errors.name && <p className="text-red-500 text-[9px] font-black uppercase mt-1 px-1 tracking-widest">{errors.name}</p>}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Téléphone</label>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Téléphone</label>
                       <div className="relative">
-                        <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                        <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" />
                         <input 
                           type="tel"
                           value={formData.phone}
                           onChange={e => setFormData({...formData, phone: e.target.value})}
                           className={cn(
-                            "w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
-                            errors.phone ? "border-red-500" : "border-slate-100"
+                            "w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 dark:text-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
+                            errors.phone ? "border-red-500" : "border-slate-100 dark:border-slate-700"
                           )}
                         />
                       </div>
@@ -183,29 +210,56 @@ export default function PrayerRequest() {
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Catégorie du Besoin</label>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Catégorie du Besoin</label>
                   <select 
                     value={formData.category}
                     onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 dark:text-white border border-slate-100 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all outline-none"
                   >
-                    {categories.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                    {categories.map(c => <option key={c} value={c} className="bg-white dark:bg-dark-card">{c.toUpperCase()}</option>)}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Votre Requête</label>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Votre Requête</label>
                   <textarea 
                     value={formData.content}
                     onChange={e => setFormData({...formData, content: e.target.value})}
                     placeholder="Écrivez ici votre sujet de prière..."
                     className={cn(
-                      "w-full px-6 py-4 bg-slate-50 border rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all resize-none",
-                      errors.content ? "border-red-500" : "border-slate-100"
+                      "w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 dark:text-white border rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all resize-none",
+                      errors.content ? "border-red-500" : "border-slate-100 dark:border-slate-700"
                     )}
                     rows={6}
                   />
                   {errors.content && <p className="text-red-500 text-[9px] font-black uppercase mt-1 px-1 tracking-widest">{errors.content}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Heure de prière souhaitée</label>
+                    <div className="relative">
+                      <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" />
+                      <input 
+                        type="time"
+                        value={formData.preferredPrayerTime}
+                        onChange={e => setFormData({...formData, preferredPrayerTime: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 dark:text-white border border-slate-100 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Rappel souhaité à</label>
+                    <div className="relative">
+                      <Bell size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" />
+                      <input 
+                        type="time"
+                        value={formData.reminderTime}
+                        onChange={e => setFormData({...formData, reminderTime: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 dark:text-white border border-slate-100 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -224,6 +278,64 @@ export default function PrayerRequest() {
             </form>
           </motion.div>
         </div>
+
+        {/* User History */}
+        {user && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-20"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-black text-church-dark uppercase tracking-tight">Mes Requêtes de Prière</h2>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Suivi de vos demandes et confirmations</p>
+              </div>
+            </div>
+
+            {loadingHistory ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-church-gold" size={32} />
+              </div>
+            ) : myRequests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {myRequests.map((req) => (
+                  <div key={req.id} className="bg-white p-6 rounded-[32px] border border-church-border shadow-sm group hover:border-church-gold transition-all">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={cn(
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        req.status === 'Confirmé' ? "bg-green-100 text-green-600" : 
+                        req.status === 'En cours' ? "bg-blue-100 text-blue-600" :
+                        "bg-slate-100 text-slate-400"
+                      )}>
+                        {req.status || 'Reçu'}
+                      </div>
+                      <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                        {req.createdAt ? format(req.createdAt.toDate(), 'dd/MM/yyyy', { locale: fr }) : '...'}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <p className="text-[10px] font-black text-church-gold uppercase tracking-[0.2em] mb-1">{req.category}</p>
+                      <p className="text-sm font-medium text-church-dark line-clamp-3">{req.content}</p>
+                    </div>
+                    
+                    {req.reply && (
+                      <div className="mt-4 p-4 bg-slate-50 border border-church-border rounded-2xl relative">
+                        <div className="absolute -top-2 left-6 px-2 bg-white text-[8px] font-black uppercase text-church-blue tracking-widest">Réponse du Pasteur</div>
+                        <p className="text-xs text-slate-600 font-medium italic">"{req.reply}"</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center bg-white rounded-[40px] border border-dashed border-church-border">
+                <MessageCircle size={40} className="text-slate-200 mx-auto mb-4" />
+                <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Vous n'avez pas encore envoyé de requête</p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );

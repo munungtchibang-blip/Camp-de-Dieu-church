@@ -11,10 +11,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getRole(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) 
+        ? get(/databases/$(database)/documents/users/$(userId)).data.get('role', 'member') 
+        : 'member';
+    }
+
     function isModerator() {
       return isSignedIn() && (
-        request.auth.token.email == 'mushitujacques3@gmail.com' && 
-        request.auth.token.email_verified == true
+        request.auth.token.email == 'mushitujacques3@gmail.com' || 
+        getRole(request.auth.uid) in ['admin', 'moderator']
       );
     }
 
@@ -22,12 +28,28 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // 0. Test Connection
+    match /test/{docId} {
+      allow read: if true;
+    }
+
     // 1. Users
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isModerator();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isModerator();
+      
+      function isValidUser(data) {
+        return data.uid == userId && 
+               data.email is string && 
+               data.role in ['member', 'moderator', 'admin'];
+      }
+
+      allow create: if isOwner(userId) && request.resource.data.role == 'member' && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role && isValidUser(request.resource.data)) || isModerator();
     }
 
     // 2. Announcements
@@ -114,6 +136,12 @@ service cloud.firestore {
 
     // 15. Site Gallery
     match /site_gallery/{imageId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+
+    // 16. Weekly Program
+    match /weekly_program/{slotId} {
       allow read: if true;
       allow write: if isModerator();
     }

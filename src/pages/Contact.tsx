@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, Clock, Send, Facebook, Youtube, Instagram, Twitter, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Phone, Mail, Clock, Send, Facebook, Youtube, Instagram, Twitter, Loader2, CheckCircle2, AlertCircle, MessageCircle, User } from 'lucide-react';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useSiteConfig } from '../hooks/useSiteConfig';
+import { useAuth } from '../context/AuthContext';
+import { cn as cnUtil } from '../lib/utils';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface ContactForm {
   name: string;
@@ -21,9 +25,10 @@ interface FormErrors {
 
 export default function Contact() {
   const { config } = useSiteConfig();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
-    email: '',
+    email: user?.email || '',
     subject: '',
     message: ''
   });
@@ -31,7 +36,31 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const defaultCenter = { lat: -4.3382, lng: 15.3188 }; // Approx coords for Limete, Kinshasa
+  const [myMessages, setMyMessages] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({ ...prev, email: user.email || '', name: user.displayName || prev.name }));
+      
+      const q = query(
+        collection(db, 'contacts'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setMyMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setLoadingHistory(false);
+      }, (error) => {
+        console.error("History error:", error);
+        setLoadingHistory(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setLoadingHistory(false);
+    }
+  }, [user]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -60,11 +89,12 @@ export default function Contact() {
     try {
       await addDoc(collection(db, 'contacts'), {
         ...formData,
+        userId: user?.uid || null,
         createdAt: serverTimestamp(),
         read: false
       });
       setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      setFormData({ name: user?.displayName || '', email: user?.email || '', subject: '', message: '' });
     } catch (error) {
       console.error("Error submitting contact form:", error);
       setStatus('error');
@@ -82,7 +112,7 @@ export default function Contact() {
   ].filter(link => link.href);
 
   return (
-    <div className="pt-32 pb-20 bg-church-bg min-h-screen">
+    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -92,67 +122,67 @@ export default function Contact() {
           <div className="inline-block bg-church-blue/10 text-church-blue px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
             Nous Sommes à Votre Écoute
           </div>
-          <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark mb-4">Contactez-nous</h1>
-          <p className="text-slate-500 max-w-2xl mx-auto font-medium">Une question, une suggestion ou besoin d'orientation ? Notre équipe est prête à vous répondre.</p>
+          <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark dark:text-white mb-4">Contactez-nous</h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium">Une question, une suggestion ou besoin d'orientation ? Notre équipe est prête à vous répondre.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-20">
           {/* Contact Info Card */}
           <div className="space-y-6">
-            <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-church-border">
-              <h2 className="text-2xl font-black text-church-dark mb-8 uppercase tracking-tight">Coordonnées</h2>
+            <div className="bg-white dark:bg-dark-card p-8 md:p-12 rounded-3xl shadow-xl border border-church-border dark:border-dark-border">
+              <h2 className="text-2xl font-black text-church-dark dark:text-white mb-8 uppercase tracking-tight">Coordonnées</h2>
               
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-church-blue flex-shrink-0 shadow-sm">
+                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/10 rounded-2xl flex items-center justify-center text-church-blue flex-shrink-0 shadow-sm">
                     <MapPin size={24} />
                   </div>
                   <div>
                     <h3 className="text-[10px] font-black text-church-blue uppercase tracking-widest mb-1">Adresse Locale</h3>
-                    <p className="text-church-dark font-bold leading-relaxed">
-                      {config?.identity?.address || config?.contact?.address || 'Chaussée Kimwenza, Commune de Limete, Kinshasa, RDC'}
+                    <p className="text-church-dark dark:text-white font-bold leading-relaxed">
+                      {config?.identity?.address || 'Chaussée Kimwenza, Commune de Limete, Kinshasa, RDC'}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-church-accent flex-shrink-0 shadow-sm">
+                  <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/10 rounded-2xl flex items-center justify-center text-church-accent flex-shrink-0 shadow-sm">
                     <Phone size={24} />
                   </div>
                   <div>
                     <h3 className="text-[10px] font-black text-church-accent uppercase tracking-widest mb-1">Téléphone & WhatsApp</h3>
-                    <p className="text-church-dark font-bold">{config?.identity?.phone || config?.contact?.phone || '+243 812 345 6789'}</p>
-                    {(config?.identity?.whatsapp || config?.contact?.whatsapp) && (
-                      <p className="text-church-dark font-bold text-sm">WhatsApp: {config?.identity?.whatsapp || config?.contact?.whatsapp}</p>
+                    <p className="text-church-dark dark:text-white font-bold">{config?.identity?.phone || '+243 812 345 6789'}</p>
+                    {config?.identity?.whatsapp && (
+                      <p className="text-church-dark dark:text-white font-bold text-sm">WhatsApp: {config?.identity?.whatsapp}</p>
                     )}
-                    <p className="text-slate-400 text-xs font-medium">Disponible de 08h00 à 18h00 (Lun-Ven)</p>
+                    <p className="text-slate-400 dark:text-slate-500 text-xs font-medium">Disponible de 08h00 à 18h00 (Lun-Ven)</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 flex-shrink-0 shadow-sm">
+                  <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/10 rounded-2xl flex items-center justify-center text-purple-600 flex-shrink-0 shadow-sm">
                     <Mail size={24} />
                   </div>
                   <div>
                     <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Email Officiel</h3>
-                    <p className="text-church-dark font-bold">{config?.identity?.email || config?.contact?.email || 'contact@campdedieu.org'}</p>
+                    <p className="text-church-dark dark:text-white font-bold">{config?.identity?.email || 'contact@campdedieu.org'}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 flex-shrink-0 shadow-sm">
+                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 flex-shrink-0 shadow-sm">
                     <Clock size={24} />
                   </div>
                   <div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Secrétariat</h3>
-                    <p className="text-church-dark font-bold">Mardi - Jeudi : 09h00 - 16h30</p>
-                    <p className="text-church-dark font-bold">Samedi : 10h00 - 13h00</p>
+                    <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Secrétariat</h3>
+                    <p className="text-church-dark dark:text-white font-bold">Mardi - Jeudi : 09h00 - 16h30</p>
+                    <p className="text-church-dark dark:text-white font-bold">Samedi : 10h00 - 13h00</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-12 pt-12 border-t border-church-border">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Suivez-nous sur les réseaux</h3>
+              <div className="mt-12 pt-12 border-t border-church-border dark:border-dark-border">
+                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">Suivez-nous sur les réseaux</h3>
                 <div className="flex gap-4">
                   {socialLinks.map((link, i) => (
                     <a 
@@ -160,7 +190,7 @@ export default function Contact() {
                       href={link.href} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-church-dark hover:text-white hover:bg-church-blue transition-all border border-church-border"
+                      className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-dark-bg flex items-center justify-center text-church-dark dark:text-white hover:text-white hover:bg-church-blue transition-all border border-church-border dark:border-dark-border"
                     >
                       <link.icon size={20} />
                     </a>
@@ -203,7 +233,7 @@ export default function Contact() {
                       type="text"
                       value={formData.name}
                       onChange={e => setFormData({...formData, name: e.target.value})}
-                      className={cn(
+                      className={cnUtil(
                         "w-full bg-white/10 border rounded-xl px-4 py-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
                         errors.name ? "border-red-500" : "border-white/20"
                       )}
@@ -217,7 +247,7 @@ export default function Contact() {
                       type="email"
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
-                      className={cn(
+                      className={cnUtil(
                         "w-full bg-white/10 border rounded-xl px-4 py-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
                         errors.email ? "border-red-500" : "border-white/20"
                       )}
@@ -233,7 +263,7 @@ export default function Contact() {
                     type="text"
                     value={formData.subject}
                     onChange={e => setFormData({...formData, subject: e.target.value})}
-                    className={cn(
+                    className={cnUtil(
                       "w-full bg-white/10 border rounded-xl px-4 py-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
                       errors.subject ? "border-red-500" : "border-white/20"
                     )}
@@ -248,7 +278,7 @@ export default function Contact() {
                     rows={5}
                     value={formData.message}
                     onChange={e => setFormData({...formData, message: e.target.value})}
-                    className={cn(
+                    className={cnUtil(
                       "w-full bg-white/10 border rounded-xl px-4 py-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-church-gold transition-all",
                       errors.message ? "border-red-500" : "border-white/20"
                     )}
@@ -282,7 +312,7 @@ export default function Contact() {
         </div>
 
         {/* Map Section */}
-        <div className="h-[500px] bg-slate-200 rounded-[40px] shadow-2xl relative overflow-hidden group">
+        <div className="h-[500px] bg-slate-200 rounded-[40px] shadow-2xl relative overflow-hidden group mb-20">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-105 opacity-40 grayscale group-hover:grayscale-0"></div>
           <div className="absolute inset-0 bg-church-dark/40 flex flex-col items-center justify-center text-center px-6">
             <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm">
@@ -301,11 +331,67 @@ export default function Contact() {
             </div>
           </div>
         </div>
+
+        {/* User Message History */}
+        {user && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-20 border-t border-church-border dark:border-dark-border pt-20"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-black text-church-dark dark:text-white uppercase tracking-tight">Mes Messages</h2>
+                <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-1">Historique de vos échanges avec le secrétariat</p>
+              </div>
+            </div>
+
+            {loadingHistory ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-church-blue" size={32} />
+              </div>
+            ) : myMessages.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {myMessages.map((msg) => (
+                  <div key={msg.id} className="bg-white dark:bg-dark-card p-6 rounded-[32px] border border-church-border dark:border-dark-border shadow-sm group hover:border-church-blue transition-all">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={cnUtil(
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800",
+                        msg.read && "bg-green-50 dark:bg-green-900/20 text-green-600"
+                      )}>
+                        {msg.read ? 'Lu par le bureau' : 'En attente'}
+                      </div>
+                      <div className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">
+                        {msg.createdAt ? format(msg.createdAt.toDate(), 'dd/MM/yyyy HH:mm', { locale: fr }) : '...'}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <p className="text-[10px] font-black text-church-blue uppercase tracking-[0.2em] mb-1">{msg.subject}</p>
+                      <p className="text-sm font-medium text-church-dark dark:text-white italic">"{msg.message}"</p>
+                    </div>
+                    
+                    {msg.reply && (
+                      <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-2xl relative">
+                        <div className="absolute -top-2 left-6 px-2 bg-white dark:bg-dark-card text-[8px] font-black uppercase text-church-blue tracking-widest">Réponse de l'Église</div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                          {msg.reply}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center bg-white dark:bg-dark-card rounded-[40px] border border-dashed border-church-border dark:border-dark-border">
+                <MessageCircle size={40} className="text-slate-200 dark:text-slate-800 mx-auto mb-4" />
+                <p className="text-xs font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">Vous n'avez pas encore envoyé de message</p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );
 }
 
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
+

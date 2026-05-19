@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Megaphone, Clock, Tag, Loader2, AlertCircle, Bell, Trash2 } from 'lucide-react';
-import { collection, query, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, Timestamp, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,18 +19,37 @@ interface NewsFeedProps {
   showTitle?: boolean;
   adminMode?: boolean;
   onDelete?: (id: string) => void;
+  filterCategory?: string;
 }
 
-export default function NewsFeed({ maxItems = 5, showTitle = true, adminMode = false, onDelete }: NewsFeedProps) {
+export default function NewsFeed({ 
+  maxItems = 5, 
+  showTitle = true, 
+  adminMode = false, 
+  onDelete,
+  filterCategory = 'Tous'
+}: NewsFeedProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'announcements'), 
-      orderBy('createdAt', 'desc'),
-      limit(maxItems)
-    );
+    let q;
+    const baseQuery = collection(db, 'announcements');
+    
+    if (filterCategory && filterCategory !== 'Tous') {
+      q = query(
+        baseQuery,
+        where('category', '==', filterCategory),
+        orderBy('createdAt', 'desc'),
+        limit(maxItems)
+      );
+    } else {
+      q = query(
+        baseQuery, 
+        orderBy('createdAt', 'desc'),
+        limit(maxItems)
+      );
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
@@ -45,7 +64,7 @@ export default function NewsFeed({ maxItems = 5, showTitle = true, adminMode = f
     });
 
     return () => unsubscribe();
-  }, [maxItems]);
+  }, [maxItems, filterCategory]);
 
   if (loading) {
     return (
@@ -84,7 +103,7 @@ export default function NewsFeed({ maxItems = 5, showTitle = true, adminMode = f
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="group relative bg-white border border-church-border rounded-2xl p-6 hover:shadow-md transition-all hover:border-church-blue/30"
+              className="group relative bg-white dark:bg-dark-card border border-church-border dark:border-dark-border rounded-2xl p-6 hover:shadow-md transition-all hover:border-church-blue/30"
             >
               {adminMode && onDelete && (
                 <button 
@@ -96,17 +115,17 @@ export default function NewsFeed({ maxItems = 5, showTitle = true, adminMode = f
               )}
 
               <div className="flex items-center gap-3 mb-3">
-                <span className="bg-blue-50 text-church-blue text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-widest">
+                <span className="bg-blue-50 dark:bg-blue-900/20 text-church-blue text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-widest">
                   {ann.category}
                 </span>
-                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
                   <Clock size={12} />
                   {ann.createdAt ? format(ann.createdAt.toDate(), 'dd MMM yyyy', { locale: fr }) : 'À l\'instant'}
                 </div>
               </div>
 
-              <h3 className="text-sm font-black text-church-dark mb-1">{ann.title}</h3>
-              <p className="text-slate-600 text-xs leading-relaxed line-clamp-3">{ann.content}</p>
+              <h3 className="text-sm font-black text-church-dark dark:text-white mb-1 uppercase tracking-tight">{ann.title}</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed line-clamp-3">{ann.content}</p>
               
               <div className="mt-4 flex items-center gap-2 text-[10px] font-black text-church-blue uppercase tracking-widest hover:underline cursor-pointer">
                 Lire la suite →

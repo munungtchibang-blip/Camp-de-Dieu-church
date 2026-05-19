@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useSiteConfig } from '../hooks/useSiteConfig';
-import { User, Target, Heart, Shield } from 'lucide-react';
+import { User, Target, Heart, Shield, X, Mail, Phone, Facebook, Youtube } from 'lucide-react';
 
 interface TeamMember {
   id: string;
@@ -11,12 +11,17 @@ interface TeamMember {
   role: string;
   description: string;
   imageUrl: string;
+  email?: string;
+  phone?: string;
+  facebook?: string;
+  youtube?: string;
 }
 
 export default function About() {
   const { config } = useSiteConfig();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'team'), orderBy('createdAt', 'asc'));
@@ -35,7 +40,7 @@ export default function About() {
   }, []);
 
   return (
-    <div className="pt-32 pb-20 bg-church-bg">
+    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <motion.div
@@ -45,7 +50,7 @@ export default function About() {
         >
           <div className="text-center mb-16">
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-church-blue mb-4 block">Notre Identité</span>
-            <h1 className="text-5xl md:text-7xl font-display font-black text-church-dark leading-none tracking-tighter mb-6 uppercase">
+            <h1 className="text-5xl md:text-7xl font-display font-black text-church-dark dark:text-white leading-none tracking-tighter mb-6 uppercase">
               À Propos de <span className="text-church-blue">l'Église</span>
             </h1>
             <div className="w-20 h-1 bg-church-gold mx-auto rounded-full"></div>
@@ -53,12 +58,12 @@ export default function About() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
-              <div className="p-8 bg-white rounded-[40px] shadow-sm border border-church-border">
-                <h2 className="text-2xl font-black text-church-dark uppercase tracking-tight mb-4 flex items-center gap-3">
+              <div className="p-8 bg-white dark:bg-dark-card rounded-[40px] shadow-sm border border-church-border dark:border-dark-border">
+                <h2 className="text-2xl font-black text-church-dark dark:text-white uppercase tracking-tight mb-4 flex items-center gap-3">
                   <Shield className="text-church-blue" />
                   Qui sommes-nous ?
                 </h2>
-                <div className="text-slate-600 leading-relaxed font-medium">
+                <div className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                   {config?.identity?.aboutText ? (
                     <p className="whitespace-pre-wrap">{config.identity.aboutText}</p>
                   ) : (
@@ -146,14 +151,15 @@ export default function About() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.1 }}
                   viewport={{ once: true }}
-                  className="group"
+                  className="group cursor-pointer"
+                  onClick={() => setSelectedMember(member)}
                 >
                   <div className="relative mb-6">
-                    <div className="aspect-[3/4] rounded-[50px] overflow-hidden border-4 border-white shadow-xl transition-all group-hover:rotate-2 group-hover:scale-[1.02]">
+                    <div className="aspect-[3/4] rounded-[50px] overflow-hidden border-4 border-white shadow-xl transition-all group-hover:rotate-2 group-hover:scale-[1.02] bg-slate-50">
                       {member.imageUrl ? (
                         <img src={member.imageUrl} alt={member.name} className="w-full h-full object-cover transition-all group-hover:scale-110" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                        <div className="w-full h-full flex items-center justify-center text-slate-300">
                           <User size={80} />
                         </div>
                       )}
@@ -165,8 +171,8 @@ export default function About() {
                   <h3 className="text-2xl font-black text-church-dark uppercase tracking-tight mb-2 text-center group-hover:text-church-blue transition-colors">
                     {member.name}
                   </h3>
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed text-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 max-w-xs mx-auto">
-                    {member.description}
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest text-center opacity-40 group-hover:opacity-100 transition-opacity">
+                    Cliquez pour voir les détails
                   </p>
                 </motion.div>
               ))}
@@ -179,6 +185,85 @@ export default function About() {
           )}
         </section>
       </div>
+
+      {/* Member Details Modal */}
+      <AnimatePresence>
+        {selectedMember && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setSelectedMember(null)} 
+              className="absolute inset-0 bg-church-dark/95 backdrop-blur-md" 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.9, y: 20 }} 
+              className="relative w-full max-w-4xl bg-white rounded-[60px] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]"
+            >
+              <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 p-3 bg-slate-100 rounded-2xl text-slate-400 hover:text-church-blue transition-colors z-20">
+                <X size={24} />
+              </button>
+
+              <div className="w-full md:w-[40%] relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-church-dark/50 to-transparent z-10 md:hidden" />
+                {selectedMember.imageUrl ? (
+                  <img src={selectedMember.imageUrl} alt={selectedMember.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                    <User size={120} />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 p-12 md:p-16 flex flex-col justify-center">
+                <div className="mb-8">
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-church-blue mb-4 block">{selectedMember.role}</span>
+                  <h2 className="text-4xl font-display font-black text-church-dark uppercase tracking-tight mb-6 leading-none">
+                    {selectedMember.name}
+                  </h2>
+                  <div className="w-16 h-1 bg-church-gold rounded-full"></div>
+                </div>
+
+                <div className="prose prose-slate max-w-none mb-10">
+                  <p className="text-slate-500 text-lg font-medium leading-relaxed whitespace-pre-wrap">
+                    {selectedMember.description || "Aucune description détaillée disponible pour le moment."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   {selectedMember.email && (
+                     <a href={`mailto:${selectedMember.email}`} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 group hover:bg-church-blue/5 transition-all">
+                        <Mail size={20} className="text-church-blue" />
+                        <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Email</span>
+                     </a>
+                   )}
+                   {selectedMember.phone && (
+                     <a href={`tel:${selectedMember.phone}`} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 group hover:bg-church-blue/5 transition-all">
+                        <Phone size={20} className="text-church-blue" />
+                        <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Appeler</span>
+                     </a>
+                   )}
+                   {selectedMember.facebook && (
+                     <a href={selectedMember.facebook} target="_blank" rel="noopener noreferrer" className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 group hover:bg-church-blue/5 transition-all">
+                        <Facebook size={20} className="text-church-blue" />
+                        <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Facebook</span>
+                     </a>
+                   )}
+                   {selectedMember.youtube && (
+                     <a href={selectedMember.youtube} target="_blank" rel="noopener noreferrer" className="p-4 bg-church-dark rounded-2xl flex flex-col items-center justify-center gap-2 group hover:bg-church-blue transition-all">
+                        <Youtube size={20} className="text-white" />
+                        <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">Vidéo</span>
+                     </a>
+                   )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

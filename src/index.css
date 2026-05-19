@@ -1,26 +1,52 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", serif;
   --font-display: "Montserrat", sans-serif;
 
-  --color-church-blue: #1d4ed8; /* blue-700 */
-  --color-church-dark: #1e3a8a; /* blue-900 */
-  --color-church-gold: #fbbf24; /* amber-400 */
-  --color-church-accent: #f59e0b; /* amber-500 */
-  --color-church-bg: #f8fafc; /* slate-50 */
-  --color-church-border: #e2e8f0; /* slate-200 */
+  --color-church-blue: #0066cc; 
+  --color-church-dark: #002244; 
+  --color-church-gold: #d4af37; 
+  --color-church-accent: #f59e0b; 
+  --color-church-bg: #f8fafc; 
+  --color-church-border: #e2e8f0; 
+
+  --color-dark-bg: #0f172a;
+  --color-dark-card: #1e293b;
+  --color-dark-border: #334155;
+  --color-dark-text: #f1f5f9;
+  --color-dark-text-muted: #94a3b8;
 }
 
 @layer base {
-  body {
+  * {
+    @apply transition-colors duration-300;
+  }
+
+  html {
     @apply bg-church-bg text-slate-900 font-sans;
+  }
+  
+  html.dark {
+    @apply bg-dark-bg text-dark-text;
+    color-scheme: dark;
+  }
+  
+  body {
+    @apply bg-transparent;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold text-church-dark;
+  }
+
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-white;
   }
 }
 

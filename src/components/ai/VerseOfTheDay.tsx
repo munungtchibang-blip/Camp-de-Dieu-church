@@ -59,18 +59,24 @@ export default function VerseOfTheDay() {
   }, []);
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2 text-church-gold">
-          <Book size={20} />
-          <span className="font-display font-semibold uppercase tracking-wider text-xs">Verset du Jour</span>
+    <div className="bg-church-dark/60 backdrop-blur-2xl rounded-[40px] p-8 md:p-10 border border-white/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] group relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-church-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-church-accent/10 rounded-xl flex items-center justify-center text-church-accent">
+            <Book size={20} />
+          </div>
+          <div>
+            <span className="block text-white/40 text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-1">Inspirant</span>
+            <span className="block font-display font-black uppercase tracking-widest text-xs text-white">Verset du Jour</span>
+          </div>
         </div>
         <button 
           onClick={fetchVerse}
           disabled={loading}
-          className="p-1 hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
+          className="w-10 h-10 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center"
         >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={16} className={loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-700"} />
         </button>
       </div>
 
@@ -81,25 +87,28 @@ export default function VerseOfTheDay() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="space-y-2"
+            className="space-y-3"
           >
-            <div className="h-4 bg-white/20 rounded w-full animate-pulse"></div>
-            <div className="h-4 bg-white/20 rounded w-3/4 animate-pulse"></div>
-            <div className="h-4 bg-white/20 rounded w-1/2 animate-pulse mt-4"></div>
+            <div className="h-3 bg-white/10 rounded-full w-full animate-pulse"></div>
+            <div className="h-3 bg-white/10 rounded-full w-[90%] animate-pulse"></div>
+            <div className="h-3 bg-white/10 rounded-full w-[40%] animate-pulse mt-6"></div>
           </motion.div>
         ) : (
           <motion.div
             key="content"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="text-white"
           >
-            <p className="text-xl font-serif italic mb-4 leading-relaxed">
+            <p className="text-xl md:text-2xl font-serif italic mb-6 leading-relaxed text-blue-50/90 tracking-tight">
               "{verse?.text}"
             </p>
-            <p className="text-church-gold font-bold text-right">
-              — {verse?.reference}
-            </p>
+            <div className="flex items-center justify-end gap-3 text-church-accent">
+              <div className="h-[1px] w-12 bg-church-accent/30"></div>
+              <p className="font-black text-xs uppercase tracking-widest">
+                {verse?.reference}
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

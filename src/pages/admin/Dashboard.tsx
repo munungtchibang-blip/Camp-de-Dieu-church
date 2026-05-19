@@ -60,6 +60,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
+import { compressImage } from '../../lib/imageUtils';
 import NewsFeed from '../../components/news/NewsFeed';
 import SermonManager from './SermonManager';
 import EventManager from './EventManager';
@@ -71,16 +72,20 @@ import PrayerRequestManager from './PrayerRequestManager';
 import GalleryManager from './GalleryManager';
 import PastorBoard from './PastorBoard';
 import MinistryManager from './MinistryManager';
+import UserManager from './UserManager';
+import WeeklyProgramManager from './WeeklyProgramManager';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { startOfMonth } from 'date-fns';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 
-type TabType = 'overview' | 'announcements' | 'sermons' | 'programs' | 'team' | 'appointments' | 'messages' | 'prayers' | 'gallery' | 'pastor' | 'ministries' | 'settings';
+import toast from 'react-hot-toast';
+
+type TabType = 'overview' | 'announcements' | 'sermons' | 'programs' | 'weekly_program' | 'team' | 'appointments' | 'messages' | 'prayers' | 'gallery' | 'pastor' | 'ministries' | 'users' | 'settings';
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('sermons');
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
   const [newAnnouncement, setNewAnnouncement] = useState({
@@ -100,7 +105,7 @@ export default function Dashboard() {
     activeEvents: 0
   });
 
-  const categories = ['Général', 'Culte', 'Événement', 'Urgent', 'Jeunesse'];
+  const categories = ['Général', 'Culte', 'Événement', 'Urgent', 'Jeunesse', 'Séminaire', 'Marathon', 'Nuit de prière', 'Culte spécial'];
 
   React.useEffect(() => {
     if (activeTab !== 'overview') return;
@@ -142,14 +147,15 @@ export default function Dashboard() {
     };
   }, [activeTab]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewAnnouncement({ ...newAnnouncement, imageUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file);
+        setNewAnnouncement({ ...newAnnouncement, imageUrl: compressed });
+      } catch (error) {
+        console.error("Compression error:", error);
+      }
     }
   };
 
@@ -165,8 +171,10 @@ export default function Dashboard() {
         createdAt: serverTimestamp()
       });
       setNewAnnouncement({ title: '', content: '', category: 'Général', imageUrl: '' });
+      toast.success("Annonce publiée !");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+      toast.error("Erreur de publication.");
     } finally {
       setSubmitting(false);
     }
@@ -178,28 +186,33 @@ export default function Dashboard() {
     const path = `announcements/${deleteConfirm.id}`;
     try {
       await deleteDoc(doc(db, 'announcements', deleteConfirm.id));
+      toast.success("Annonce supprimée.");
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+      toast.error("Erreur de suppression.");
     }
   };
 
   const tabs = [
     { id: 'overview', label: 'Aperçu', icon: LayoutDashboard },
     { id: 'pastor', label: 'Espace Pasteur', icon: ShieldCheck },
+    { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
+    { id: 'prayers', label: 'Requêtes de Prière', icon: Heart },
     { id: 'announcements', label: 'Annonces', icon: Megaphone },
+    { id: 'sermons', label: 'Sermons', icon: Mic2 },
+    { id: 'programs', label: 'Calendrier', icon: Calendar },
+    { id: 'weekly_program', label: 'Programme Hebdo', icon: CalendarDays },
     { id: 'ministries', label: 'Ministères', icon: Users },
-    { id: 'sermons', label: 'Prédications', icon: Mic2 },
-    { id: 'programs', label: 'Programme', icon: Calendar },
-    { id: 'team', label: 'Équipe', icon: Users },
-    { id: 'appointments', label: 'Rendez-vous', icon: CalendarDays },
+    { id: 'team', label: 'Gestion d\'Équipe', icon: Users },
     { id: 'messages', label: 'Messages', icon: Inbox },
-    { id: 'prayers', label: 'Prières', icon: Heart },
     { id: 'gallery', label: 'Galerie', icon: ImageIcon },
+    { id: 'users', label: 'Utilisateurs', icon: Users },
     { id: 'settings', label: 'Configuration', icon: Settings },
   ];
 
   return (
-    <div className="pt-32 pb-20 bg-church-bg min-h-screen">
+    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ConfirmDeleteModal 
           isOpen={deleteConfirm.isOpen}
@@ -214,13 +227,13 @@ export default function Dashboard() {
               <ShieldCheck className="text-church-blue" size={24} />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Administration Système</span>
             </div>
-            <h1 className="text-5xl font-display font-black text-church-dark leading-tight">
+            <h1 className="text-5xl font-display font-black text-church-dark dark:text-white leading-tight">
               Bienvenue, <br />
               <span className="text-church-blue">{profile?.displayName?.split(' ')[0]}</span>
             </h1>
           </div>
 
-          <div className="flex bg-white p-2 rounded-2xl border border-church-border shadow-sm overflow-x-auto no-scrollbar">
+          <div className="flex bg-white dark:bg-dark-card p-2 rounded-2xl border border-church-border dark:border-dark-border shadow-sm overflow-x-auto no-scrollbar">
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -228,8 +241,8 @@ export default function Dashboard() {
                 className={cn(
                   "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
                   activeTab === tab.id 
-                    ? "bg-church-dark text-white shadow-lg" 
-                    : "text-slate-400 hover:text-church-blue"
+                    ? "bg-church-dark dark:bg-church-blue text-white shadow-lg" 
+                    : "text-slate-400 dark:text-slate-500 hover:text-church-blue"
                 )}
               >
                 <tab.icon size={16} />
@@ -252,14 +265,14 @@ export default function Dashboard() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {[
-                    { label: 'Fidèles Enregistrés', value: stats.members.toLocaleString(), color: 'bg-white', text: 'text-church-dark', trend: 'Total Membres' },
+                    { label: 'Fidèles Enregistrés', value: stats.members.toLocaleString(), color: 'bg-white dark:bg-dark-card', text: 'text-church-dark dark:text-white', trend: 'Total Membres' },
                     { label: 'Dons du Mois', value: `${stats.donations.toLocaleString()} $`, color: 'bg-church-gold', text: 'text-church-dark', trend: 'Période en cours' },
-                    { label: 'Demandes de RDV', value: stats.appointments.toString(), color: 'bg-church-dark', text: 'text-white', trend: 'Total demandes' },
+                    { label: 'Demandes de RDV', value: stats.appointments.toString(), color: 'bg-church-dark dark:bg-slate-900', text: 'text-white', trend: 'Total demandes' },
                     { label: 'Messages Reçus', value: stats.messages.toString(), color: 'bg-church-blue', text: 'text-white', trend: 'Boîte de réception' },
                   ].map((stat, i) => (
                     <div 
                       key={i}
-                      className={cn(stat.color, "p-8 rounded-[40px] shadow-sm border border-church-border relative overflow-hidden group")}
+                      className={cn(stat.color, "p-8 rounded-[40px] shadow-sm border border-church-border dark:border-dark-border relative overflow-hidden group transition-colors duration-300")}
                     >
                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                         <LayoutDashboard size={80} />
@@ -268,7 +281,7 @@ export default function Dashboard() {
                       <p className={cn("text-4xl font-black mt-2", stat.text)}>{stat.value}</p>
                       <div className="mt-4 flex items-center gap-2">
                         <span className={cn("text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest", 
-                          stat.color === 'bg-white' ? "bg-green-50 text-green-600" : "bg-white/20 text-white"
+                          stat.color === 'bg-white dark:bg-dark-card' ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400" : "bg-white/20 text-white"
                         )}>
                           {stat.trend}
                         </span>
@@ -278,41 +291,41 @@ export default function Dashboard() {
                 </div>
 
                 {/* Accuracy verification notice */}
-                <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex items-start gap-4">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-church-blue flex-shrink-0 shadow-sm">
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 p-6 rounded-3xl flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white dark:bg-dark-card rounded-xl flex items-center justify-center text-church-blue flex-shrink-0 shadow-sm">
                     <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-church-dark uppercase tracking-tight mb-1">Intégrité des Données</h3>
-                    <p className="text-xs text-slate-500 font-medium">Toutes les statistiques ci-dessus proviennent en temps réel de votre base de données sécurisée. Aucune donnée n'est simulée.</p>
+                    <h3 className="text-sm font-black text-church-dark dark:text-white uppercase tracking-tight mb-1">Intégrité des Données</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Toutes les statistiques ci-dessus proviennent en temps réel de votre base de données sécurisée. Aucune donnée n'est simulée.</p>
                   </div>
                 </div>
 
                 {/* Quick Actions & Recent Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                  <div className="bg-white p-8 rounded-[40px] border border-church-border shadow-sm">
-                    <h2 className="text-xl font-black text-church-dark mb-6 uppercase tracking-tight flex items-center gap-2">
+                  <div className="bg-white dark:bg-dark-card p-8 rounded-[40px] border border-church-border dark:border-dark-border shadow-sm transition-colors duration-300">
+                    <h2 className="text-xl font-black text-church-dark dark:text-white mb-6 uppercase tracking-tight flex items-center gap-2">
                       <CheckCircle2 className="text-green-500" />
                       Actions de Gestion
                     </h2>
                     <div className="space-y-4">
-                      <button onClick={() => setActiveTab('pastor')} className="w-full p-5 bg-slate-50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
-                        <span className="text-sm font-bold text-slate-600 group-hover:text-church-blue transition-colors">
+                      <button onClick={() => setActiveTab('pastor')} className="w-full p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-church-blue transition-colors">
                           Gérer les rendez-vous pastoraux
                         </span>
-                        <ArrowRight size={18} className="text-slate-300 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
+                        <ArrowRight size={18} className="text-slate-300 dark:text-slate-600 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
                       </button>
-                      <button onClick={() => setActiveTab('prayers')} className="w-full p-5 bg-slate-50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
-                        <span className="text-sm font-bold text-slate-600 group-hover:text-church-blue transition-colors">
+                      <button onClick={() => setActiveTab('prayers')} className="w-full p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-church-blue transition-colors">
                           Consulter les {stats.messages} nouvelles requêtes
                         </span>
-                        <ArrowRight size={18} className="text-slate-300 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
+                        <ArrowRight size={18} className="text-slate-300 dark:text-slate-600 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
                       </button>
-                      <button onClick={() => setActiveTab('programs')} className="w-full p-5 bg-slate-50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
-                        <span className="text-sm font-bold text-slate-600 group-hover:text-church-blue transition-colors">
+                      <button onClick={() => setActiveTab('programs')} className="w-full p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-church-blue transition-all flex items-center justify-between group">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-church-blue transition-colors">
                           Mettre à jour le calendrier des événements
                         </span>
-                        <ArrowRight size={18} className="text-slate-300 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
+                        <ArrowRight size={18} className="text-slate-300 dark:text-slate-600 group-hover:translate-x-1 group-hover:text-church-blue transition-all" />
                       </button>
                     </div>
                   </div>
@@ -337,19 +350,19 @@ export default function Dashboard() {
                 </div>
 
                 {/* Icon Library Preview */}
-                <div className="bg-white p-8 rounded-[40px] border border-church-border shadow-sm">
+                <div className="bg-white dark:bg-dark-card p-8 rounded-[40px] border border-church-border dark:border-dark-border shadow-sm transition-colors duration-300">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-xl font-black text-church-dark uppercase tracking-tight flex items-center gap-2">
+                      <h2 className="text-xl font-black text-church-dark dark:text-white uppercase tracking-tight flex items-center gap-2">
                         <Star className="text-church-gold" />
                         Bibliothèque d'Icônes
                       </h2>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Utilisez ces noms d'icônes dans vos configurations</p>
+                      <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-1">Utilisez ces noms d'icônes dans vos configurations</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-4">
                     {allIcons.map((iconObj, idx) => (
-                      <div key={idx} className="flex flex-col items-center gap-3 p-4 bg-slate-50 rounded-2xl group hover:bg-church-blue hover:text-white transition-all cursor-help border border-transparent hover:border-blue-100">
+                      <div key={idx} className="flex flex-col items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl group hover:bg-church-blue hover:text-white transition-all cursor-help border border-transparent hover:border-blue-100">
                         <iconObj.icon size={20} className="group-hover:scale-110 transition-transform" />
                         <span className="text-[8px] font-black uppercase tracking-tighter opacity-50 group-hover:opacity-100">{iconObj.name}</span>
                       </div>
@@ -360,35 +373,36 @@ export default function Dashboard() {
             )}
 
             {activeTab === 'pastor' && <PastorBoard />}
-
+            {activeTab === 'appointments' && <AppointmentManager />}
+            {activeTab === 'prayers' && <PrayerRequestManager />}
             {activeTab === 'announcements' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 <div className="lg:col-span-1">
-                  <div className="bg-white p-8 rounded-3xl shadow-xl border border-church-border sticky top-32">
-                    <h2 className="text-xl font-black text-church-dark mb-6 flex items-center gap-2 uppercase tracking-tight">
+                  <div className="bg-white dark:bg-dark-card p-8 rounded-3xl shadow-xl border border-church-border dark:border-dark-border sticky top-32 transition-colors duration-300">
+                    <h2 className="text-xl font-black text-church-dark dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
                       <Plus className="text-church-accent" />
                       Nouvelle Annonce
                     </h2>
                     
                     <form onSubmit={handleAnnouncementSubmit} className="space-y-6">
                       <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Titre</label>
+                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Titre</label>
                         <input 
                           type="text"
                           value={newAnnouncement.title}
                           onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                          className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
                           placeholder="Ex: Séminaire de Couple"
                           required
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Catégorie</label>
+                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Catégorie</label>
                         <select 
                           value={newAnnouncement.category}
                           onChange={e => setNewAnnouncement({...newAnnouncement, category: e.target.value})}
-                          className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue appearance-none transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-church-blue appearance-none transition-all"
                         >
                           {categories.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
@@ -397,13 +411,13 @@ export default function Dashboard() {
                       </div>
       
                       <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Image de l'annonce</label>
+                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Image de l'annonce</label>
                         <div className="flex gap-2">
                           <input 
                             type="text"
                             value={newAnnouncement.imageUrl}
                             onChange={e => setNewAnnouncement({...newAnnouncement, imageUrl: e.target.value})}
-                            className="flex-1 bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
+                            className="flex-1 bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
                             placeholder="URL de l'image (optionnel)"
                           />
                           <input 
@@ -416,14 +430,14 @@ export default function Dashboard() {
                           <button 
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="px-4 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                            className="px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                             title="Importer depuis l'appareil"
                           >
                             <ImageIcon size={18} />
                           </button>
                         </div>
                         {newAnnouncement.imageUrl && (
-                          <div className="mt-3 relative w-full h-32 rounded-xl overflow-hidden border border-church-border">
+                          <div className="mt-3 relative w-full h-32 rounded-xl overflow-hidden border border-church-border dark:border-dark-border">
                             <img src={newAnnouncement.imageUrl} className="w-full h-full object-cover" alt="Preview" />
                             <button 
                               type="button"
@@ -437,12 +451,12 @@ export default function Dashboard() {
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Contenu</label>
+                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Contenu</label>
                         <textarea 
                           value={newAnnouncement.content}
                           onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
                           rows={4}
-                          className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-church-blue transition-all"
                           placeholder="Détails de l'annonce..."
                           required
                         />
@@ -451,7 +465,7 @@ export default function Dashboard() {
                       <button 
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-4 bg-church-dark text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-church-blue transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-church-dark dark:bg-church-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-church-blue transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         {submitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
                         Publier l'Annonce
@@ -461,7 +475,7 @@ export default function Dashboard() {
                 </div>
       
                 <div className="lg:col-span-2">
-                   <div className="bg-white p-8 rounded-3xl shadow-xl border border-church-border min-h-[500px]">
+                   <div className="bg-white dark:bg-dark-card p-8 rounded-3xl shadow-xl border border-church-border dark:border-dark-border min-h-[500px] transition-colors duration-300">
                     <NewsFeed 
                       adminMode={true} 
                       onDelete={(id) => setDeleteConfirm({ isOpen: true, id })} 
@@ -474,12 +488,12 @@ export default function Dashboard() {
 
             {activeTab === 'sermons' && <SermonManager />}
             {activeTab === 'programs' && <EventManager />}
+            {activeTab === 'weekly_program' && <WeeklyProgramManager />}
             {activeTab === 'team' && <TeamManager />}
-            {activeTab === 'appointments' && <AppointmentManager />}
             {activeTab === 'messages' && <ContactManager />}
-            {activeTab === 'prayers' && <PrayerRequestManager />}
             {activeTab === 'gallery' && <GalleryManager />}
             {activeTab === 'ministries' && <MinistryManager />}
+            {activeTab === 'users' && <UserManager />}
             {activeTab === 'settings' && <SiteSettings />}
           </motion.div>
         </AnimatePresence>

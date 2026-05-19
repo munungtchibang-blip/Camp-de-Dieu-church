@@ -1,9 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Users, Heart, Baby, Shield, Music, Star, ArrowRight, Loader2, X, Calendar as CalendarIcon, Clock, ChevronRight } from 'lucide-react';
+import { Users, Heart, Baby, Shield, Music, Star, ArrowRight, Loader2, X, Calendar as CalendarIcon, Clock, ChevronRight, MapPin } from 'lucide-react';
 
 interface Activity {
   title: string;
@@ -21,6 +21,19 @@ interface Ministry {
   activities?: Activity[];
 }
 
+interface WeeklyProgram {
+  id: string;
+  title: string;
+  day: number;
+  time: string;
+  endTime?: string;
+  type: string;
+  location: string;
+  ministryId: string;
+}
+
+const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
 const iconMap: Record<string, any> = {
   Users,
   Heart,
@@ -31,25 +44,71 @@ const iconMap: Record<string, any> = {
 };
 
 export default function Ministries() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [ministries, setMinistries] = useState<Ministry[]>([]);
+  const [weeklyPrograms, setWeeklyPrograms] = useState<WeeklyProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMinistry, setSelectedMinistry] = useState<Ministry | null>(null);
+
+  const closeModal = () => {
+    setSelectedMinistry(null);
+    if (location.hash) {
+      navigate('/ministeres', { replace: true });
+    }
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'ministries'), orderBy('createdAt', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMinistries(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry)));
-      setLoading(false);
+      const fetchedMinistries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
+      setMinistries(fetchedMinistries);
+      
+      // Auto-select based on hash after data is loaded
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (hash && fetchedMinistries.length > 0) {
+        const found = fetchedMinistries.find(m => 
+          m.name.toLowerCase().includes(hash) || 
+          hash.includes(m.name.toLowerCase())
+        );
+        if (found) setSelectedMinistry(found);
+      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'ministries');
+    });
+
+    const qProg = query(collection(db, 'weekly_program'), orderBy('day', 'asc'), orderBy('time', 'asc'));
+    const unsubProg = onSnapshot(qProg, (snapshot) => {
+      setWeeklyPrograms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyProgram)));
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubProg();
+    };
   }, []);
 
+  // Update selection if hash changes
+  useEffect(() => {
+    const hash = location.hash.replace('#', '').toLowerCase();
+    if (hash && ministries.length > 0) {
+      const found = ministries.find(m => 
+        m.name.toLowerCase().includes(hash) || 
+        hash.includes(m.name.toLowerCase())
+      );
+      if (found) {
+        setSelectedMinistry(found);
+      } else if (hash === '') {
+        setSelectedMinistry(null);
+      }
+    } else if (!hash) {
+      setSelectedMinistry(null);
+    }
+  }, [location.hash, ministries]);
+
   return (
-    <div className="pt-32 pb-20 bg-church-bg min-h-screen">
+    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -59,8 +118,8 @@ export default function Ministries() {
           <div className="inline-block bg-church-gold/10 text-church-gold px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-4">
             Servir & S'engager
           </div>
-          <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark mb-6">Nos Ministères</h1>
-          <p className="text-slate-500 max-w-2xl mx-auto font-medium text-lg">
+          <h1 className="text-4xl md:text-6xl font-display font-black text-church-dark dark:text-white mb-6">Nos Ministères</h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium text-lg">
             Découvrez les différentes manières de servir au sein de notre communauté et trouvez votre place pour grandir spirituellement.
           </p>
         </motion.div>
@@ -80,10 +139,10 @@ export default function Ministries() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.1 }}
-                  className="group relative bg-white rounded-[48px] overflow-hidden border border-church-border shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer"
+                  className="group relative bg-white dark:bg-dark-card rounded-[48px] overflow-hidden border border-church-border dark:border-dark-border shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer"
                   onClick={() => setSelectedMinistry(ministry)}
                 >
-                  <div className="aspect-[4/3] relative overflow-hidden bg-slate-100">
+                  <div className="aspect-[4/3] relative overflow-hidden bg-slate-100 dark:bg-slate-800">
                     <img 
                       src={ministry.imageUrl || `https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800`} 
                       alt={ministry.name}
@@ -100,16 +159,16 @@ export default function Ministries() {
                   </div>
                   
                   <div className="p-8">
-                    <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">
                       {ministry.description}
                     </p>
                     
-                    <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-50 dark:border-dark-border">
                       <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Responsable</p>
-                        <p className="text-xs font-bold text-church-dark">{ministry.leader || 'Direction de l\'Évêché'}</p>
+                        <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-1">Responsable</p>
+                        <p className="text-xs font-bold text-church-dark dark:text-white">{ministry.leader || 'Direction de l\'Évêché'}</p>
                       </div>
-                      <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl group-hover:bg-church-dark group-hover:text-white transition-all duration-500">
+                      <button className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-2xl group-hover:bg-church-dark group-hover:dark:bg-church-blue group-hover:text-white transition-all duration-500">
                         <ArrowRight size={20} />
                       </button>
                     </div>
@@ -127,17 +186,17 @@ export default function Ministries() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }} 
-                onClick={() => setSelectedMinistry(null)} 
+                onClick={closeModal} 
                 className="fixed inset-0 bg-church-dark/95 backdrop-blur-md" 
               />
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 50 }} 
                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                 exit={{ opacity: 0, scale: 0.95, y: 50 }} 
-                className="relative w-full max-w-5xl bg-white rounded-[48px] overflow-hidden shadow-2xl flex flex-col"
+                className="relative w-full max-w-5xl bg-white dark:bg-dark-card rounded-[48px] overflow-hidden shadow-2xl flex flex-col transition-colors duration-300"
               >
                 <button 
-                  onClick={() => setSelectedMinistry(null)} 
+                  onClick={closeModal} 
                   className="absolute top-8 right-8 z-30 w-12 h-12 bg-white/10 backdrop-blur-md text-white rounded-2xl flex items-center justify-center hover:bg-church-gold hover:text-church-dark transition-all border border-white/20"
                 >
                   <X size={24} />
@@ -165,22 +224,22 @@ export default function Ministries() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-white">
+                <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-white dark:bg-dark-card">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                     <div>
                       <div className="inline-block bg-church-blue/10 text-church-blue px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] mb-4">Vision & Impact</div>
-                      <p className="text-slate-600 text-lg md:text-xl leading-relaxed font-semibold mb-10">
+                      <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl leading-relaxed font-semibold mb-10">
                         {selectedMinistry.description}
                       </p>
                       
-                      <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-church-blue shadow-sm border border-slate-50 flex-shrink-0">
+                      <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[40px] border border-slate-100 dark:border-dark-border flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white dark:bg-slate-700 rounded-2xl flex items-center justify-center text-church-blue shadow-sm border border-slate-50 dark:border-slate-600 flex-shrink-0">
                           <Star size={32} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Direction du Ministère</p>
-                          <p className="text-xl font-black text-church-dark uppercase tracking-tight">{selectedMinistry.leader || 'Servant de l\'Éternel'}</p>
-                          <p className="text-xs text-slate-500 font-bold">Responsable Principal</p>
+                          <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Direction du Ministère</p>
+                          <p className="text-xl font-black text-church-dark dark:text-white uppercase tracking-tight">{selectedMinistry.leader || 'Servant de l\'Éternel'}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">Responsable Principal</p>
                         </div>
                       </div>
                     </div>
@@ -188,7 +247,37 @@ export default function Ministries() {
                     <div>
                       <div className="inline-block bg-church-gold/10 text-church-gold px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] mb-4">Agenda des Activités</div>
                       <div className="space-y-8">
-                        {(selectedMinistry.activities && selectedMinistry.activities.length > 0) ? (
+                        {weeklyPrograms.filter(p => p.ministryId === selectedMinistry.id).length > 0 ? (
+                          weeklyPrograms.filter(p => p.ministryId === selectedMinistry.id).map((program, idx) => (
+                            <div key={idx} className="flex gap-8 group">
+                              <div className="flex-shrink-0 flex flex-col items-center">
+                                <div className="w-3 h-3 bg-church-gold rounded-full group-hover:scale-150 transition-transform duration-500" />
+                                <div className="w-px flex-1 bg-slate-100 my-2" />
+                              </div>
+              <div className="pb-8 border-b border-slate-50 w-full group-hover:pl-4 transition-all duration-500">
+                                <div className="flex flex-wrap items-center gap-3 mb-3">
+                                  <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center gap-2">
+                                    <CalendarIcon size={12} className="text-church-blue" />
+                                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{DAYS[program.day]}</span>
+                                  </div>
+                                  <div className="px-3 py-1 bg-church-blue/5 dark:bg-church-blue/10 rounded-full flex items-center gap-2">
+                                    <Clock size={12} className="text-church-blue" />
+                                    <span className="text-[10px] font-black text-church-blue uppercase tracking-widest">{program.time} {program.endTime ? `- ${program.endTime}` : ''}</span>
+                                  </div>
+                                  <div className="px-3 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-dark-border rounded-full flex items-center gap-2">
+                                    <MapPin size={12} className="text-slate-400" />
+                                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{program.location}</span>
+                                  </div>
+                                </div>
+                                <h4 className="text-xl font-black text-church-dark dark:text-white uppercase tracking-tight mb-3 flex items-center gap-3">
+                                  {program.title}
+                                  <ChevronRight size={20} className="text-slate-200 group-hover:text-church-gold group-hover:translate-x-2 transition-all" />
+                                </h4>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-lg mb-2">Rejoignez-nous pour ce moment de communion intense et de croissance spirituelle.</p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (selectedMinistry.activities && selectedMinistry.activities.length > 0) ? (
                           selectedMinistry.activities.map((activity, idx) => (
                             <div key={idx} className="flex gap-8 group">
                               <div className="flex-shrink-0 flex flex-col items-center">

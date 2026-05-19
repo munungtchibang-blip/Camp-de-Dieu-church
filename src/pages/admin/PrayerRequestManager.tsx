@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, User, Trash2, CheckCircle2, Clock, Calendar, Heart, ShieldAlert } from 'lucide-react';
+import { MessageSquare, User, Trash2, CheckCircle2, Clock, Calendar, Heart, ShieldAlert, Sparkles } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
+import toast from 'react-hot-toast';
 
 interface PrayerRequest {
   id: string;
@@ -43,8 +44,10 @@ export default function PrayerRequestManager() {
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, 'prayer_requests', id), { status: newStatus });
+      toast.success(`Statut mis à jour: ${newStatus}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `prayer_requests/${id}`);
+      toast.error("Erreur de mise à jour.");
     }
   };
 
@@ -52,8 +55,11 @@ export default function PrayerRequestManager() {
     if (!deleteConfirm.id) return;
     try {
       await deleteDoc(doc(db, 'prayer_requests', deleteConfirm.id));
+      toast.success("Requête supprimée.");
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `prayer_requests/${deleteConfirm.id}`);
+      toast.error("Erreur de suppression.");
     }
   };
 
@@ -129,25 +135,38 @@ export default function PrayerRequestManager() {
               </div>
 
               {/* Actions */}
-              <div className="flex lg:flex-col items-center justify-end gap-2 min-w-[180px]">
-                <div className="flex items-center gap-1 w-full">
-                  {(['Reçu', 'En prière', 'Exaucé'] as const).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusUpdate(req.id, status)}
-                      className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase tracking-tight transition-all border ${
-                        req.status === status
-                          ? 'bg-church-blue text-white border-church-blue shadow-lg shadow-church-blue/20'
-                          : 'bg-white text-slate-400 border-church-border hover:bg-slate-50'
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
+              <div className="flex lg:flex-col items-center justify-end gap-2 min-w-[200px]">
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-1 w-full">
+                    {(['Reçu', 'En prière'] as const).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleStatusUpdate(req.id, status)}
+                        className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase tracking-tight transition-all border ${
+                          req.status === status
+                            ? 'bg-church-blue text-white border-church-blue shadow-lg shadow-church-blue/20'
+                            : 'bg-white text-slate-400 border-church-border hover:bg-slate-50'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => handleStatusUpdate(req.id, 'Exaucé')}
+                    className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${
+                      req.status === 'Exaucé'
+                        ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/20'
+                        : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                    }`}
+                  >
+                    <Sparkles size={12} className={req.status === 'Exaucé' ? 'animate-pulse' : ''} />
+                    {req.status === 'Exaucé' ? 'Témoignage: Exaucé' : 'Marquer comme Exaucé'}
+                  </button>
                 </div>
                 <button 
                   onClick={() => setDeleteConfirm({ isOpen: true, id: req.id })}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all self-end"
                   title="Supprimer"
                 >
                   <Trash2 size={16} />

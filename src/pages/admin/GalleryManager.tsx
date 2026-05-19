@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Loader2, Trash2, Image as ImageIcon, Video, Play, Type, Save, Edit2 } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
+import { compressImage } from '../../lib/imageUtils';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
+import toast from 'react-hot-toast';
 
 interface MediaItem {
   id: string;
@@ -10,6 +12,7 @@ interface MediaItem {
   category: string;
   url: string;
   title: string;
+  isHero?: boolean;
   createdAt: any;
 }
 
@@ -25,7 +28,8 @@ export default function GalleryManager() {
     type: 'image' as 'image' | 'video',
     category: 'Cultes',
     url: '',
-    title: ''
+    title: '',
+    isHero: false
   });
 
   const categories = ['Cultes', 'Événements', 'Musique', 'Social', 'Témoignages'];
@@ -42,14 +46,16 @@ export default function GalleryManager() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewItem({ ...newItem, url: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImage(file);
+        setNewItem({ ...newItem, url: compressedDataUrl });
+      } catch (error) {
+        console.error("Compression error:", error);
+        toast.error("Erreur lors de l'optimisation de l'image.");
+      }
     }
   };
 
@@ -58,7 +64,8 @@ export default function GalleryManager() {
       type: 'image',
       category: 'Cultes',
       url: '',
-      title: ''
+      title: '',
+      isHero: false
     });
     setEditingId(null);
   };
@@ -68,7 +75,8 @@ export default function GalleryManager() {
       type: item.type,
       category: item.category,
       url: item.url,
-      title: item.title
+      title: item.title,
+      isHero: item.isHero || false
     });
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -83,16 +91,18 @@ export default function GalleryManager() {
           ...newItem,
           updatedAt: serverTimestamp()
         });
-        alert("Media mis à jour !");
+        toast.success("Media mis à jour !");
       } else {
         await addDoc(collection(db, 'gallery'), {
           ...newItem,
           createdAt: serverTimestamp()
         });
+        toast.success("Media ajouté à la galerie !");
       }
       resetForm();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, editingId ? `gallery/${editingId}` : 'gallery');
+      toast.error("Erreur d'enregistrement.");
     } finally {
       setSubmitting(false);
     }
@@ -102,8 +112,11 @@ export default function GalleryManager() {
     if (!deleteConfirm.id) return;
     try {
       await deleteDoc(doc(db, 'gallery', deleteConfirm.id));
+      toast.success("Media supprimé.");
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `gallery/${deleteConfirm.id}`);
+      toast.error("Erreur de suppression.");
     }
   };
 
@@ -115,8 +128,8 @@ export default function GalleryManager() {
         onConfirm={confirmDelete}
         message="Voulez-vous vraiment supprimer ce media de la galerie ?"
       />
-      <div className="bg-white p-8 rounded-3xl shadow-xl border border-church-border">
-        <h2 className="text-xl font-black text-church-dark mb-6 flex items-center gap-2 uppercase tracking-tight">
+      <div className="bg-white dark:bg-dark-card p-8 rounded-3xl shadow-xl border border-church-border dark:border-dark-border transition-colors duration-300">
+        <h2 className="text-xl font-black text-church-dark dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
           <ImageIcon className="text-church-blue" />
           {editingId ? 'Modifier Media' : 'Ajouter à la Galerie'}
         </h2>
@@ -124,50 +137,62 @@ export default function GalleryManager() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Titre du Media</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Titre du Media</label>
               <input 
                 type="text"
                 value={newItem.title}
                 onChange={e => setNewItem({...newItem, title: e.target.value})}
-                className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white"
                 placeholder="Ex: Culte de Célébration - Dimanche 12 Jan"
                 required
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Type</label>
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Type</label>
                 <select 
                   value={newItem.type}
                   onChange={e => setNewItem({...newItem, type: e.target.value as any})}
-                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white"
                 >
                   <option value="image">Image</option>
                   <option value="video">Vidéo (Thumbnail)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Catégorie</label>
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Catégorie</label>
                 <select 
                   value={newItem.category}
                   onChange={e => setNewItem({...newItem, category: e.target.value})}
-                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white"
                 >
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>
+            <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-church-border dark:border-dark-border">
+              <input 
+                type="checkbox"
+                id="isHero"
+                checked={newItem.isHero}
+                onChange={e => setNewItem({...newItem, isHero: e.target.checked})}
+                className="w-5 h-5 rounded text-church-blue"
+              />
+              <label htmlFor="isHero" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest cursor-pointer">
+                Définir comme image principale (Hero) sur l'accueil
+              </label>
+            </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">URL Image/Thumbnail</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">URL Image/Thumbnail</label>
               <div className="flex gap-2">
                 <input 
                   type="text"
                   value={newItem.url}
                   onChange={e => setNewItem({...newItem, url: e.target.value})}
-                  className="flex-1 bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                  className="flex-1 bg-slate-50 dark:bg-slate-800/50 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white"
                   placeholder="URL ou importer ->"
                   required
                 />
@@ -215,8 +240,13 @@ export default function GalleryManager() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {media.map(item => (
-              <div key={item.id} className="group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-church-border">
+              <div key={item.id} className={`group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden border transition-colors ${item.isHero ? 'border-church-gold border-2' : 'border-church-border'}`}>
                 <img src={item.url} className="w-full h-full object-cover" alt="" />
+                {item.isHero && (
+                  <div className="absolute top-2 left-2 bg-church-gold text-church-dark text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg">
+                    Principale
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button onClick={() => handleEdit(item)} className="p-2 bg-white text-church-blue rounded-lg shadow-xl hover:scale-110 transition-transform">
                     <Edit2 size={16} />

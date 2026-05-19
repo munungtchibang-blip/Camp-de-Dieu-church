@@ -5,6 +5,7 @@ import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
+import toast from 'react-hot-toast';
 
 interface Appointment {
   id: string;
@@ -45,8 +46,10 @@ export default function AppointmentManager() {
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, 'appointments', id), { status: newStatus });
+      toast.success(`RDV ${newStatus.toLowerCase()} !`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `appointments/${id}`);
+      toast.error("Erreur de mise à jour.");
     }
   };
 
@@ -54,8 +57,11 @@ export default function AppointmentManager() {
     if (!deleteConfirm.id) return;
     try {
       await deleteDoc(doc(db, 'appointments', deleteConfirm.id));
+      toast.success("Rendez-vous supprimé.");
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `appointments/${deleteConfirm.id}`);
+      toast.error("Erreur de suppression.");
     }
   };
 

@@ -38,6 +38,7 @@
         "date": { "type": "string", "format": "date" },
         "category": { "type": "string", "enum": ["Foi", "Famille", "Délivrance", "Jeunesse"] },
         "description": { "type": "string" },
+        "passages": { "type": "string" },
         "videoUrl": { "type": "string" },
         "audioUrl": { "type": "string" },
         "pdfUrl": { "type": "string" },
@@ -227,6 +228,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["url", "createdAt"]
+    },
+    "WeeklyProgram": {
+      "title": "Weekly Program Slot",
+      "description": "Standard recurring weekly events.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "day": { "type": "integer" },
+        "time": { "type": "string" },
+        "endTime": { "type": "string" },
+        "type": { "type": "string" },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "day", "time", "type"]
     }
   },
   "firestore": {
@@ -281,6 +297,10 @@
     "/site_gallery/{imageId}": {
       "schema": "GalleryImage",
       "description": "Images for the site hero/gallery."
+    },
+    "/weekly_program/{slotId}": {
+      "schema": "WeeklyProgram",
+      "description": "Standard recurring weekly slots."
     }
   }
 }

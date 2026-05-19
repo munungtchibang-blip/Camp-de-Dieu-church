@@ -65,7 +65,7 @@ export default function BibleAssistant() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-24 right-6 z-50 w-[350px] md:w-[400px] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+            className="fixed bottom-24 right-6 z-50 w-[350px] md:w-[400px] bg-white dark:bg-dark-card rounded-3xl shadow-2xl border border-gray-100 dark:border-dark-border overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="bg-church-blue p-6 text-white flex items-center space-x-3">
@@ -84,7 +84,7 @@ export default function BibleAssistant() {
             {/* Messages */}
             <div 
               ref={scrollRef}
-              className="flex-grow p-6 space-y-4 max-h-[400px] overflow-y-auto bg-gray-50/50"
+              className="flex-grow p-6 space-y-4 max-h-[400px] overflow-y-auto bg-gray-50/50 dark:bg-slate-900/50"
             >
               {messages.map((m, i) => (
                 <motion.div
@@ -100,7 +100,7 @@ export default function BibleAssistant() {
                     "p-3 rounded-2xl text-sm leading-relaxed",
                     m.role === 'user' 
                       ? "bg-church-blue text-white rounded-tr-none" 
-                      : "bg-white border border-gray-100 text-gray-700 shadow-sm rounded-tl-none"
+                      : "bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-slate-200 shadow-sm rounded-tl-none"
                   )}>
                     {m.text}
                   </div>
@@ -109,9 +109,9 @@ export default function BibleAssistant() {
               {loading && (
                 <div className="flex items-center space-x-2 text-gray-400">
                   <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce delay-75"></div>
-                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce delay-150"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full animate-bounce delay-75"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full animate-bounce delay-150"></div>
                   </div>
                   <span className="text-[10px] italic">L'assistant réfléchit...</span>
                 </div>
@@ -119,7 +119,7 @@ export default function BibleAssistant() {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-white border-t border-gray-100">
+            <div className="p-4 bg-white dark:bg-dark-card border-t border-gray-100 dark:border-dark-border">
               <div className="relative">
                 <input
                   type="text"
@@ -127,7 +127,7 @@ export default function BibleAssistant() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Posez votre question biblique..."
-                  className="w-full bg-gray-100 border-none rounded-2xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-church-gold transition-all"
+                  className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-church-gold transition-all dark:text-white dark:placeholder:text-slate-500"
                 />
                 <button
                   onClick={handleSend}

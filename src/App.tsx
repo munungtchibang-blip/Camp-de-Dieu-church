@@ -21,9 +21,12 @@ import Donations from './pages/Donations';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import AdminDashboard from './pages/admin/Dashboard';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/layout/ScrollToTop';
 import BibleAssistant from './components/ai/BibleAssistant';
+import { ThemeProvider } from './context/ThemeContext';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -60,16 +63,20 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col bg-church-bg">
-          <Navbar />
-          <main className="flex-grow">
-            <AnimatedRoutes />
-          </main>
-          <BibleAssistant />
-          <Footer />
-        </div>
-      </Router>
+      <ThemeProvider>
+        <Toaster position="top-right" />
+        <Router>
+          <ScrollToTop />
+          <div className="min-h-screen flex flex-col bg-church-bg dark:bg-dark-bg transition-colors duration-300">
+            <Navbar />
+            <main className="flex-grow">
+              <AnimatedRoutes />
+            </main>
+            <BibleAssistant />
+            <Footer />
+          </div>
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

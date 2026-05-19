@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Loader2, Trash2, User, Image as ImageIcon, Briefcase, Type } from 'lucide-react';
+import { Plus, Loader2, Trash2, User, Image as ImageIcon, Briefcase, Type, Mail, Phone, Facebook, Youtube, Instagram } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
+import { compressImage } from '../../lib/imageUtils';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
+import toast from 'react-hot-toast';
 
 interface TeamMember {
   id: string;
@@ -10,6 +12,10 @@ interface TeamMember {
   role: string;
   description: string;
   imageUrl: string;
+  email?: string;
+  phone?: string;
+  facebook?: string;
+  youtube?: string;
 }
 
 export default function TeamManager() {
@@ -23,7 +29,11 @@ export default function TeamManager() {
     name: '',
     role: 'Pasteur',
     description: '',
-    imageUrl: ''
+    imageUrl: '',
+    email: '',
+    phone: '',
+    facebook: '',
+    youtube: ''
   });
 
   const roles = ["Pasteur", "Évangéliste", "Diacre", "Ancien", "Intercesseur", "Responsable"];
@@ -45,14 +55,16 @@ export default function TeamManager() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewMember({ ...newMember, imageUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImage(file);
+        setNewMember({ ...newMember, imageUrl: compressedDataUrl });
+      } catch (error) {
+        console.error("Compression error:", error);
+        toast.error("Erreur lors de l'optimisation de l'image.");
+      }
     }
   };
 
@@ -70,10 +82,16 @@ export default function TeamManager() {
         name: '',
         role: 'Pasteur',
         description: '',
-        imageUrl: ''
+        imageUrl: '',
+        email: '',
+        phone: '',
+        facebook: '',
+        youtube: ''
       });
+      toast.success("Membre ajouté avec succès !");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'team');
+      toast.error("Erreur lors de l'ajout.");
     } finally {
       setSubmitting(false);
     }
@@ -83,8 +101,11 @@ export default function TeamManager() {
     if (!deleteConfirm.id) return;
     try {
       await deleteDoc(doc(db, 'team', deleteConfirm.id));
+      toast.success("Membre supprimé.");
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `team/${deleteConfirm.id}`);
+      toast.error("Erreur lors de la suppression.");
     }
   };
 
@@ -129,7 +150,7 @@ export default function TeamManager() {
               <select 
                 value={newMember.role}
                 onChange={e => setNewMember({...newMember, role: e.target.value})}
-                className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark"
               >
                 {roles.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
@@ -142,7 +163,7 @@ export default function TeamManager() {
                   type="text"
                   value={newMember.imageUrl}
                   onChange={e => setNewMember({...newMember, imageUrl: e.target.value})}
-                  className="flex-1 bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm"
+                  className="flex-1 bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark"
                   placeholder="URL ou importer ->"
                 />
                 <input 
@@ -181,9 +202,67 @@ export default function TeamManager() {
               <textarea 
                 value={newMember.description}
                 onChange={e => setNewMember({...newMember, description: e.target.value})}
-                className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm h-full min-h-[150px]"
+                className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark h-32"
                 placeholder="Une brève description du ministère de cette personne..."
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Mail size={12} className="text-church-blue" />
+                  Email
+                </label>
+                <input 
+                  type="email"
+                  value={newMember.email}
+                  onChange={e => setNewMember({...newMember, email: e.target.value})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark focus:outline-none focus:ring-2 focus:ring-church-blue"
+                  placeholder="jean@eglise.com"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Phone size={12} className="text-church-blue" />
+                  Téléphone
+                </label>
+                <input 
+                  type="tel"
+                  value={newMember.phone}
+                  onChange={e => setNewMember({...newMember, phone: e.target.value})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark focus:outline-none focus:ring-2 focus:ring-church-blue"
+                  placeholder="+243..."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Facebook size={12} className="text-church-blue" />
+                  Facebook
+                </label>
+                <input 
+                  type="url"
+                  value={newMember.facebook}
+                  onChange={e => setNewMember({...newMember, facebook: e.target.value})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark focus:outline-none focus:ring-2 focus:ring-church-blue"
+                  placeholder="https://facebook.com/..."
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <Youtube size={12} className="text-church-blue" />
+                  YouTube Link
+                </label>
+                <input 
+                  type="url"
+                  value={newMember.youtube}
+                  onChange={e => setNewMember({...newMember, youtube: e.target.value})}
+                  className="w-full bg-slate-50 border border-church-border rounded-xl px-4 py-3 text-sm text-church-dark focus:outline-none focus:ring-2 focus:ring-church-blue"
+                  placeholder="Dernière prédication"
+                />
+              </div>
             </div>
             
             <button 

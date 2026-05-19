@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -11,6 +11,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = 3000;
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 async function startServer() {
   const app = express();
@@ -30,45 +39,57 @@ async function startServer() {
 
   // AI Routes
   app.post("/api/ai/generate", async (req, res) => {
-    console.log("AI Generate Request received:", req.body.prompt?.substring(0, 50) + "...");
     const { prompt, systemInstruction } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is missing from process.env");
       return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
     }
 
     try {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: systemInstruction 
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 2000,
+        },
+        systemInstruction: systemInstruction
       });
-      
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-
-      console.log("AI Generation successful");
-      res.json({ text: text || "" });
+      const response = await result.response;
+      res.json({ text: response.text() });
     } catch (error: any) {
-      // Extract code and message
-      const isQuotaError = error.message?.includes("429") || error.message?.includes("RESOURCE_EXHAUSTED");
-      
-      if (isQuotaError) {
-        console.warn("Gemini API Quota reached (429)");
-      } else {
-        console.error("Gemini API Error details:", error);
-      }
-      
-      let errorMessage = error.message || "Failed to generate content";
-      let statusCode = 500;
+      console.error("Gemini API Error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate content" });
+    }
+  });
 
-      if (isQuotaError) {
-        statusCode = 429;
-        errorMessage = "Quota Gemini atteint. Veuillez réessayer demain ou configurer votre propre clé API.";
-      }
+  app.post("/api/ai/subtitles", async (req, res) => {
+    const { title, preacher, description, passages } = req.body;
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured." });
+    }
 
-      res.status(statusCode).json({ error: errorMessage });
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-flash-latest",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `En tant qu'assistant de l'église CDD Kinshasa, génère une transcription textuelle structurée (sous-titres / résumé détaillé par points) pour la prédication suivante :
+              Titre : ${title}
+              Prédicateur : ${preacher}
+              Versets : ${passages || 'N/A'}
+              Description : ${description || 'N/A'}
+              
+              La transcription doit être inspirante, détaillée et structurée comme un sermon retranscrit. Utilise un ton prophétique et bienveillant. Inclus des temps (ex: [00:00]) fictifs pour donner l'impression d'une retranscription réelle du sermon.` }]
+          }
+        ]
+      });
+
+      res.json({ text: response.text || "" });
+    } catch (error: any) {
+      console.error("Gemini Subtitle Error:", error);
+      res.status(500).json({ error: "Erreur lors de la génération des sous-titres IA." });
     }
   });
 
