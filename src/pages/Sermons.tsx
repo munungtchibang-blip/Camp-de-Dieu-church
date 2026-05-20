@@ -143,6 +143,18 @@ export default function Sermons() {
     return () => unsubscribe();
   }, [sortBy]);
 
+  // Lock background scroll when detail modal or sharing dialog is open
+  useEffect(() => {
+    if (selectedSermonDetail || sharingSermon) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedSermonDetail, sharingSermon]);
+
   const filteredSermons = sermons.filter(sermon => {
     const sermonDate = sermon.date?.toDate ? sermon.date.toDate() : new Date(sermon.date);
     const matchesSearch = sermon.title.toLowerCase().includes(searchTerm.toLowerCase()) || 

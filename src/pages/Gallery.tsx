@@ -33,6 +33,18 @@ export default function Gallery() {
     return () => unsubscribe();
   }, []);
 
+  // Lock body Scroll when gallery media item is viewed in full screen
+  useEffect(() => {
+    if (selectedItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedItem]);
+
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);

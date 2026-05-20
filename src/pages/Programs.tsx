@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import toast from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 
 interface Event {
   id: string;
@@ -37,6 +38,26 @@ export default function Programs() {
   const [loading, setLoading] = useState(true);
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'weekly', data: any } | null>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!loading && location.hash) {
+      const hash = location.hash;
+      if (hash.startsWith('#weekly-')) {
+        const id = hash.replace('#weekly-', '');
+        const found = weeklyPrograms.find(wp => wp.id === id);
+        if (found) {
+          setSelectedItem({ type: 'weekly', data: found });
+        }
+      } else if (hash.startsWith('#event-')) {
+        const id = hash.replace('#event-', '');
+        const found = events.find(e => e.id === id);
+        if (found) {
+          setSelectedItem({ type: 'event', data: found });
+        }
+      }
+    }
+  }, [location.hash, loading, weeklyPrograms, events]);
 
   useEffect(() => {
     const q = query(collection(db, 'events'), orderBy('start', 'asc'));
@@ -60,6 +81,18 @@ export default function Programs() {
       unsubWeekly();
     };
   }, []);
+
+  // Lock background scroll when a program or event detail modal drawer is open
+  useEffect(() => {
+    if (selectedItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedItem]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
@@ -93,7 +126,13 @@ export default function Programs() {
   const DAYS_LIST = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
   return (
-    <div className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="pt-32 pb-20 bg-church-bg dark:bg-dark-bg min-h-screen transition-colors duration-300"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
            initial={{ opacity: 0, y: 20 }}
@@ -500,7 +539,7 @@ export default function Programs() {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

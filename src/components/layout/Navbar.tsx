@@ -89,11 +89,23 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close dropdown on location change
+  // Close dropdown and mobile menu on any location or hash change
   useEffect(() => {
     setActiveDropdown(null);
     setIsOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search, location.hash]);
+
+  // Lock background body scroll when mobile menu is active
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const churchName = config?.identity?.name || "Camp de Dieu";
   const churchDescription = config?.identity?.description || "Ministère International • Kinshasa";
@@ -116,7 +128,7 @@ export default function Navbar() {
               transition={{ duration: 0.5 }}
               className={cn(
               "bg-church-blue rounded-full flex items-center justify-center overflow-hidden shadow-2xl border-2 border-church-gold relative transition-all duration-700 ease-in-out",
-              scrolled || location.pathname !== '/' ? "w-12 h-12 lg:w-14 lg:h-14" : "w-20 h-20 lg:w-28 lg:h-28"
+              scrolled || location.pathname !== '/' ? "w-12 h-12 lg:w-14 lg:h-14" : "w-14 h-14 md:w-20 md:h-20 lg:w-28 lg:h-28"
             )}>
               {config?.identity?.logoUrl ? (
                 <img 

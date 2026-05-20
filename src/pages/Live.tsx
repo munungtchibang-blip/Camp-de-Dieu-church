@@ -29,6 +29,26 @@ export default function Live() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    try {
+      if (url.includes('youtube.com/watch?v=')) {
+        return url.replace('watch?v=', 'embed/').split('&')[0];
+      }
+      if (url.includes('youtu.be/')) {
+        const id = url.split('youtu.be/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}`;
+      }
+      if (url.includes('youtube.com/live/')) {
+        const id = url.split('youtube.com/live/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}`;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return url;
+  };
+
   const handleSubscribe = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -87,7 +107,13 @@ export default function Live() {
   }, []);
 
   return (
-    <div className="pt-32 pb-20 bg-slate-950 min-h-screen text-white overflow-hidden relative">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="pt-32 pb-20 bg-slate-950 min-h-screen text-white overflow-hidden relative"
+    >
       {/* Dynamic Background */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-church-blue/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-church-gold/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
@@ -135,7 +161,7 @@ export default function Live() {
               {config?.socials.liveUrl ? (
                 <iframe 
                   className="w-full h-full"
-                  src={config.socials.liveUrl}
+                  src={getEmbedUrl(config.socials.liveUrl)}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -380,6 +406,6 @@ export default function Live() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

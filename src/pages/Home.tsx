@@ -117,7 +117,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-church-bg dark:bg-dark-bg transition-colors duration-300">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col min-h-screen bg-church-bg dark:bg-dark-bg transition-colors duration-300"
+    >
       <main className="flex-1">
         {/* Hero Section */}
         <div className="relative min-h-[700px] flex items-center group overflow-hidden" aria-label={randomImage.title}>
@@ -238,7 +244,7 @@ export default function Home() {
                  ))
               ) : weeklyPrograms.length > 0 ? (
                 weeklyPrograms.slice(0, 8).map((wp, i) => (
-                  <Link key={wp.id} to="/programmes">
+                  <Link key={wp.id} to={`/programmes#weekly-${wp.id}`}>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       whileInView={{ opacity: 1, scale: 1 }}
@@ -316,7 +322,7 @@ export default function Home() {
                     className="relative"
                   >
                     <Link 
-                      to="/programmes" 
+                      to={`/programmes#event-${event.id}`} 
                       className="group block h-full bg-white dark:bg-dark-card border border-church-border dark:border-dark-border rounded-[40px] p-8 hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] hover:border-church-gold transition-all relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-110 group-hover:bg-church-gold/10 transition-all duration-500" />
@@ -513,7 +519,7 @@ export default function Home() {
           </motion.div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 

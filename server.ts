@@ -46,16 +46,14 @@ async function startServer() {
     }
 
     try {
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: 2000,
-        },
-        systemInstruction: systemInstruction
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: systemInstruction 
+        }
       });
-      const response = await result.response;
-      res.json({ text: response.text() });
+      res.json({ text: response.text || "" });
     } catch (error: any) {
       console.error("Gemini API Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate content" });
