@@ -112,13 +112,14 @@ export default function Navbar() {
   const logoText = churchName.split(' ').map(word => word[0]).join('').slice(0, 3).toUpperCase();
 
   return (
-    <nav className={cn(
-      "fixed top-0 w-full z-40 transition-all duration-500",
+    <>
+      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <nav className={cn(
+        "fixed top-0 w-full z-40 transition-all duration-500",
       scrolled || location.pathname !== '/' 
         ? "bg-white dark:bg-dark-bg border-b border-church-border dark:border-dark-border shadow-md py-2" 
         : "bg-white/10 dark:bg-black/20 backdrop-blur-md border-b border-white/10 dark:border-white/5 py-4"
     )}>
-      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
@@ -342,8 +343,9 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+    </nav>
 
-      {/* Mobile Nav Overlay */}
+    {/* Mobile Nav Overlay */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -352,14 +354,14 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-church-dark/60 dark:bg-black/80 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-church-dark/60 dark:bg-black/80 backdrop-blur-sm z-50 md:hidden"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-white dark:bg-dark-bg z-50 md:hidden shadow-2xl flex flex-col pt-safe"
+              className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-white dark:bg-dark-bg z-50 md:hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 flex items-center justify-between border-b border-church-border dark:border-dark-border">
                 <div className="flex items-center gap-3">
@@ -479,6 +481,6 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }
