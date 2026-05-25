@@ -14,15 +14,17 @@ import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../hooks/useSiteConfig';
 import GlobalSearch from './GlobalSearch';
 import ThemeToggle from './ThemeToggle';
+import NotificationSubscription from '../notifications/NotificationSubscription';
 
 const navigation = [
   {
     name: 'L\'Église',
     icon: Church,
     links: [
-      { name: 'Accueil', href: '/', icon: Church, description: 'Bienvenue au Camp de Dieu' },
+      { name: 'Accueil', href: '/', icon: Church, description: 'Bienvenue au Centre Missionnaire Camp de Dieu' },
       { name: 'Notre Vision', href: '/a-propos', icon: Info, description: 'Qui nous sommes et ce que nous croyons' },
       { name: 'Calendrier', href: '/programmes', icon: CalendarDays, description: 'Cultes et événements à venir' },
+      { name: 'Témoignages', href: '/temoignages', icon: MessageSquare, description: 'Ce que Dieu a fait pour nous' },
       { name: 'Galerie', href: '/galerie', icon: Image, description: 'Vivez nos moments en images' },
     ]
   },
@@ -107,7 +109,7 @@ export default function Navbar() {
     };
   }, [isOpen]);
 
-  const churchName = config?.identity?.name || "Camp de Dieu";
+  const churchName = config?.identity?.name || "Centre Missionnaire Camp de Dieu";
   const churchDescription = config?.identity?.description || "Ministère International • Kinshasa";
   const logoText = churchName.split(' ').map(word => word[0]).join('').slice(0, 3).toUpperCase();
 
@@ -123,13 +125,13 @@ export default function Navbar() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-4 lg:space-x-6 group">
+          <Link to="/" className="flex items-center space-x-4 lg:space-x-6 group overflow-hidden">
             <motion.div 
               whileHover={{ scale: 1.05, rotate: [0, -5, 5, 0] }}
               transition={{ duration: 0.5 }}
               className={cn(
-              "bg-church-blue rounded-full flex items-center justify-center overflow-hidden shadow-2xl border-2 border-church-gold relative transition-all duration-700 ease-in-out",
-              scrolled || location.pathname !== '/' ? "w-12 h-12 lg:w-14 lg:h-14" : "w-14 h-14 md:w-20 md:h-20 lg:w-28 lg:h-28"
+              "bg-church-blue rounded-full flex items-center justify-center overflow-hidden shadow-2xl border-2 border-church-gold relative transition-all duration-700 ease-in-out shrink-0",
+              scrolled || location.pathname !== '/' ? "w-10 h-10 lg:w-14 lg:h-14" : "w-12 h-12 md:w-20 md:h-20 lg:w-24 lg:h-24"
             )}>
               {config?.identity?.logoUrl ? (
                 <img 
@@ -141,31 +143,31 @@ export default function Navbar() {
               ) : (
                 <span className={cn(
                   "text-white font-bold uppercase transition-all duration-500",
-                  scrolled || location.pathname !== '/' ? "text-sm lg:text-base" : "text-lg lg:text-xl"
+                  scrolled || location.pathname !== '/' ? "text-xs lg:text-base" : "text-sm lg:text-xl"
                 )}>{logoText || "CDD"}</span>
               )}
             </motion.div>
-            <div className="hidden sm:block">
+            <div className="hidden sm:flex sm:flex-col sm:justify-center">
+              <span className={cn(
+                "font-bold tracking-widest uppercase transition-all duration-500 truncate whitespace-nowrap mb-0.5",
+                scrolled || location.pathname !== '/' 
+                  ? "text-[9px] lg:text-[11px] text-church-gold" 
+                  : "text-[10px] lg:text-xs text-church-gold/90"
+              )}>
+                Centre Missionnaire
+              </span>
               <h1 className={cn(
-                "font-display font-black leading-none uppercase tracking-wider transition-all duration-500",
+                "font-display font-black leading-none uppercase tracking-wider transition-all duration-500 whitespace-nowrap",
                 scrolled || location.pathname !== '/' 
-                  ? "text-base lg:text-lg text-church-dark dark:text-white" 
-                  : "text-lg lg:text-2xl text-white"
+                  ? "text-sm lg:text-base text-church-dark dark:text-white" 
+                  : "text-base sm:text-lg lg:text-xl text-white"
               )}>
-                {churchName}
+                CAMP DE DIEU
               </h1>
-              <p className={cn(
-                "font-bold tracking-widest uppercase transition-all duration-500",
-                scrolled || location.pathname !== '/' 
-                  ? "text-[7px] lg:text-[9px] text-church-gold" 
-                  : "text-[8px] lg:text-xs text-church-gold/80"
-              )}>
-                {churchDescription}
-              </p>
             </div>
           </Link>
           
-          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4 shrink-0">
             <button
               onClick={() => setIsSearchOpen(true)}
               className={cn(
@@ -386,6 +388,12 @@ export default function Navbar() {
                   className="space-y-4"
                 >
                   <ThemeToggle isInsideMobileMenu />
+                  <div className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                    <span className="font-bold text-sm text-church-dark dark:text-white uppercase tracking-wider">
+                      Alertes
+                    </span>
+                    <NotificationSubscription />
+                  </div>
                 </motion.div>
 
                 <div className="space-y-8">

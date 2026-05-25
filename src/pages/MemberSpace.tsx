@@ -118,7 +118,7 @@ export default function MemberSpace() {
             <div className="bg-church-gold h-1.5 w-24 mb-8"></div>
             <h1 className="text-5xl font-display font-black text-church-dark dark:text-white leading-tight mb-6">
               Vivez l'expérience <br />
-              <span className="text-church-blue">{user ? `Shalom, ${user.displayName}` : 'Camp de Dieu'}</span> en ligne.
+              <span className="text-church-blue">{user ? `Shalom, ${user.displayName}` : 'Centre Missionnaire Camp de Dieu'}</span> en ligne.
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-md">
               {user 

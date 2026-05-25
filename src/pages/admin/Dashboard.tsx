@@ -74,6 +74,7 @@ import PastorBoard from './PastorBoard';
 import MinistryManager from './MinistryManager';
 import UserManager from './UserManager';
 import WeeklyProgramManager from './WeeklyProgramManager';
+import TestimonyManager from './TestimonyManager';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { startOfMonth } from 'date-fns';
@@ -81,7 +82,7 @@ import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 
 import toast from 'react-hot-toast';
 
-type TabType = 'overview' | 'announcements' | 'sermons' | 'programs' | 'weekly_program' | 'team' | 'appointments' | 'messages' | 'prayers' | 'gallery' | 'pastor' | 'ministries' | 'users' | 'settings';
+type TabType = 'overview' | 'announcements' | 'sermons' | 'programs' | 'weekly_program' | 'team' | 'appointments' | 'messages' | 'prayers' | 'gallery' | 'pastor' | 'ministries' | 'users' | 'settings' | 'testimonies';
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -200,6 +201,7 @@ export default function Dashboard() {
     { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
     { id: 'prayers', label: 'Requêtes de Prière', icon: Heart },
     { id: 'announcements', label: 'Annonces', icon: Megaphone },
+    { id: 'testimonies', label: 'Témoignages', icon: MessageSquare },
     { id: 'sermons', label: 'Sermons', icon: Mic2 },
     { id: 'programs', label: 'Calendrier', icon: Calendar },
     { id: 'weekly_program', label: 'Programme Hebdo', icon: CalendarDays },
@@ -487,6 +489,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === 'sermons' && <SermonManager />}
+            {activeTab === 'testimonies' && <TestimonyManager />}
             {activeTab === 'programs' && <EventManager />}
             {activeTab === 'weekly_program' && <WeeklyProgramManager />}
             {activeTab === 'team' && <TeamManager />}

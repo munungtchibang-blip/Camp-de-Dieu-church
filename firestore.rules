@@ -145,5 +145,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isModerator();
     }
+
+    // 17. Testimonies
+    match /testimonies/{testimonyId} {
+      allow read: if (resource == null) || resource.data.status == 'approved' || isModerator();
+      allow create: if true;
+      allow update, delete: if isModerator();
+    }
   }
 }

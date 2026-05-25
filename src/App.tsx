@@ -26,7 +26,10 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/layout/ScrollToTop';
 import BibleAssistant from './components/ai/BibleAssistant';
+import HelpWidget from './components/common/HelpWidget';
 import { ThemeProvider } from './context/ThemeContext';
+
+import Testimonies from './pages/Testimonies';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -36,6 +39,7 @@ function AnimatedRoutes() {
       <Routes location={location}>
         <Route path="/" element={<Home />} />
         <Route path="/a-propos" element={<About />} />
+        <Route path="/temoignages" element={<Testimonies />} />
         <Route path="/programmes" element={<Programs />} />
         <Route path="/direct" element={<Live />} />
         <Route path="/predications" element={<Sermons />} />
@@ -73,6 +77,7 @@ export default function App() {
               <AnimatedRoutes />
             </main>
             <BibleAssistant />
+            <HelpWidget />
             <Footer />
           </div>
         </Router>

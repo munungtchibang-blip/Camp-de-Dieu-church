@@ -4,6 +4,7 @@ import { Calendar, Facebook, Youtube, Instagram, MessageSquare, Megaphone, Twitt
 import { Link } from 'react-router-dom';
 import VerseOfTheDay from '../components/ai/VerseOfTheDay';
 import NewsFeed from '../components/news/NewsFeed';
+import HomeCalendar from '../components/calendar/HomeCalendar';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -211,6 +212,27 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
               <NewsFeed maxItems={3} showTitle={false} />
             </div>
+          </section>
+
+          <section id="calendrier-mensuel" className="relative">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div>
+                <motion.div 
+                  initial={{ width: 0 }}
+                  whileInView={{ width: 48 }}
+                  className="h-1 bg-church-gold mb-4"
+                />
+                <h3 className="text-3xl font-black text-church-dark dark:text-white uppercase tracking-tighter flex items-center gap-3">
+                  <Calendar className="text-church-gold" size={32} />
+                  Calendrier du Mois
+                </h3>
+                <p className="text-slate-400 dark:text-slate-500 text-xs font-medium mt-2">
+                  Découvrez nos activités et événements de ce mois.
+                </p>
+              </div>
+            </div>
+            
+            <HomeCalendar />
           </section>
 
           {/* Weekly Program Section */}

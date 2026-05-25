@@ -5,7 +5,7 @@ import { useSiteConfig } from '../../hooks/useSiteConfig';
 export default function Footer() {
   const { config } = useSiteConfig();
 
-  const churchName = config?.identity?.name || "Camp de Dieu";
+  const churchName = config?.identity?.name || "Centre Missionnaire Camp de Dieu";
   const churchDescription = config?.identity?.description || "Ministère International • Kinshasa";
   const churchAddress = config?.identity?.address || 'Kinshasa, République Démocratique du Congo';
   const logoText = churchName.split(' ').map(word => word[0]).join('').slice(0, 3).toUpperCase();
@@ -37,8 +37,8 @@ export default function Footer() {
               )}
             </div>
             <div>
-              <p className="font-display font-black text-church-dark dark:text-white uppercase tracking-widest text-sm">{churchName}</p>
-              <p className="text-[9px] text-church-gold font-bold tracking-widest uppercase">{churchDescription}</p>
+              <p className="font-bold tracking-widest text-[9px] uppercase text-church-gold mb-0.5">Centre Missionnaire</p>
+              <p className="font-display font-black text-church-dark dark:text-white uppercase tracking-widest text-base leading-none">CAMP DE DIEU</p>
             </div>
           </div>
           

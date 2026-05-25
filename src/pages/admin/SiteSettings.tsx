@@ -732,7 +732,7 @@ export default function SiteSettings() {
               value={config.banking?.accountName || ''}
               onChange={e => setConfig({...config, banking: {...(config.banking || {accountName: '', bankName: '', accountNumber: ''}), accountName: e.target.value}})}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-church-border dark:border-dark-border rounded-xl px-4 py-3 text-sm text-church-dark dark:text-white transition-all outline-none focus:ring-2 focus:ring-church-blue"
-              placeholder="Ex: Église Camp de Dieu"
+              placeholder="Ex: Centre Missionnaire Camp de Dieu"
             />
           </div>
           <div>

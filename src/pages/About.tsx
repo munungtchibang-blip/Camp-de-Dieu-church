@@ -141,7 +141,7 @@ export default function About() {
             <h2 className="text-5xl font-display font-black text-church-dark leading-none tracking-tighter uppercase mb-6">
               Bergers & <span className="text-church-blue">Ministres</span>
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto font-medium">Les hommes et femmes dédiés au service de Dieu et de la communauté du Camp de Dieu.</p>
+            <p className="text-slate-500 max-w-2xl mx-auto font-medium">Les hommes et femmes dédiés au service de Dieu et de la communauté du Centre Missionnaire Camp de Dieu.</p>
           </div>
 
           {loadingTeam ? (

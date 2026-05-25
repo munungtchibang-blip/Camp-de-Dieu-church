@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import { getMessaging, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -12,6 +14,17 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+export const storage = getStorage(app);
+
+// Initialize messaging with isSupported check since it doesn't work in all browsers
+export const messaging = async () => {
+  const supported = await isSupported();
+  if (supported) {
+    return getMessaging(app);
+  }
+  return null;
+};
 
 // Test Connection
 async function testConnection() {
